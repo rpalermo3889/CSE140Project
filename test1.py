@@ -13,9 +13,9 @@ rf[10] = 0x70
 rf[11] = 0x4
 
 # Data memory initialization
-d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
-d_mem[0x70] = 0x5
-d_mem[0x74] = 0x10
+d_mem = [0] * 64  # Increase size of the data memory to 64 entries
+d_mem[0x1C] = 0x5
+d_mem[0x20] = 0x10
 
 def Fetch():
     global pc, next_pc, branch_target
@@ -133,6 +133,17 @@ def ControlUnit(opcode, funct3, funct7):
 
 # Main function
 def main():
+    # Initialize registers and memory
+    rf = [0] * 32  # Register file with 32 entries
+    rf[1] = 0x20
+    rf[2] = 0x5
+    rf[10] = 0x70
+    rf[11] = 0x4
+
+    d_mem = [0] * 64  # Increase size of the data memory to 64 entries
+    d_mem[0x1C] = 0x5
+    d_mem[0x20] = 0x10
+
     pc = 0  # Program counter
     total_clock_cycles = 0  # Total clock cycles
 
