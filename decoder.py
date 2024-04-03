@@ -6,7 +6,7 @@ import math
 def sign_extend_12(imm):
     if imm & 0x800: # Check if the sign bit is set
         imm |= 0xFFFFF000 # Perform sign extension
-    return imm # Cast to signed int
+    return int(imm) # Cast to signed int
 
 # Function to sign-extend a 13-bit immediate value
 # Ronald Chen
@@ -103,10 +103,6 @@ def decode_I(instr):
 
 # Function to decode S-type instruction
 # Robert Palermo
-# Function to decode S-type instruction
-# Robert Palermo
-# Function to decode S-type instruction
-# Robert Palermo
 def decode_S(instr):
     rs2 = (instr >> 20) & 0x1F
     rs1 = (instr >> 15) & 0x1F
@@ -129,7 +125,6 @@ def decode_S(instr):
     if imm < 0 or imm > 9:
         print(f" (or 0x{imm & 0xFFF:X})", end="")
     print()
-
 
 # Function to decode SB-type instruction
 # Ronald Chen
