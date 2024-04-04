@@ -17,7 +17,7 @@ def sign_extend_13(imm):
 
 # Function to decode R-type instruction
 # Robert Palermo
-def decode_R(instr):
+def decode_R(instr, opcode):
     rd = (instr >> 7) & 0x1F
     rs2 = (instr >> 20) & 0x1F
     rs1 = (instr >> 15) & 0x1F
@@ -53,6 +53,8 @@ def decode_R(instr):
     print(f"Rd: x{rd}")
     print(f"Funct3: {funct3}")
     print(f"Funct7: {funct7}")
+    # opcode, rd, rs1, rs2, imm, funct3, funct7
+    return opcode, rd, rs1, rs2, "NA", funct3, funct7
 
 # Function to decode I-type instruction
 # Ronald Chen
@@ -100,6 +102,8 @@ def decode_I(instr):
     if imm < 0 or imm > 9:
         print(f" (or 0x{imm & 0x5F:X})", end="")
     print()
+    # opcode, rd, rs1, rs2, imm, funct3, funct7
+    return opcode, rd, rs1, "NA", imm, "NA", "NA"
 
 # Function to decode S-type instruction
 # Robert Palermo
@@ -125,10 +129,12 @@ def decode_S(instr):
     if imm < 0 or imm > 9:
         print(f" (or 0x{imm & 0xFFF:X})", end="")
     print()
+    # opcode, rd, rs1, rs2, imm, funct3, funct7
+    return opcode, "NA", rs1, rs2, imm, funct3, "NA"
 
 # Function to decode SB-type instruction
 # Ronald Chen
-def decode_SB(instr):
+def decode_SB(instr, opcode):
     rs2 = (instr >> 20) & 0x1F
     rs1 = (instr >> 15) & 0x1F
     funct3 = (instr >> 12) & 0x7
@@ -151,6 +157,8 @@ def decode_SB(instr):
     if imm < 0 or imm > 9:
         print(f" (or 0x{imm & 0xFFF:X})", end="")
     print()
+    # opcode, rd, rs1, rs2, imm, funct3, funct7
+    return opcode, "NA", rs1, rs2, imm, funct3, "NA"
 
 # Function to decode UJ-type instruction
 # Robert Palermo
@@ -169,27 +177,29 @@ def decode_UJ(instr):
     if imm < 0 or imm > 9:
         print(f" (or 0x{imm & 0xFFF:X})", end="")
     print()
+    # opcode, rd, rs1, rs2, imm, funct3, funct7
+    return opcode, rd, "NA", "NA", imm, "NA", "NA"
 
 # Robert Palermo
-def main():
-    binary = input("Enter an instruction: ")
+def decoder(binary):
     instr = 0
+    binary = str(binary)
+    print(binary)
     for i, bit in enumerate(binary):
         if bit == '1':
             instr |= (1 << (31 - i))
 
     opcode = instr & 0x7F
     if opcode == 0b0110011: # R-type
-        decode_R(instr)
+        return decode_R(instr, opcode)
     elif opcode == 0b0000011 or opcode == 0b0010011 or opcode == 0b1100111: # I-type
-        decode_I(instr)
+        return decode_I(instr)
     elif opcode == 0b0100011: # S-type
-        decode_S(instr)
+        return decode_S(instr)
     elif opcode == 0b1100011: # SB-type
-        decode_SB(instr)
+        return decode_SB(instr, opcode)
     elif opcode == 0b1101111: # UJ-type
-        decode_UJ(instr)
+        return decode_UJ(instr)
 
-if __name__ == "__main__":
-    main()
+
 

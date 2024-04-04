@@ -1,3 +1,4 @@
+import decoder
 # Global variables
 pc = 0
 next_pc = 0
@@ -36,21 +37,14 @@ def Fetch():
     pc = branch_target if branch_target != 0 else next_pc
 
 def Decode(instruction):
+    print("Decode(instruction)",instruction)
     # Extract opcode and operands from instruction
-    opcode = instruction & 0x7F
-    rs1 = (instruction >> 15) & 0x1F
-    rs2 = (instruction >> 20) & 0x1F
-    rd = (instruction >> 7) & 0x1F
-    imm = instruction >> 20  # Extract immediate field
-    
-    # Perform sign-extension for I-type instructions
-    if imm & 0x800:
-        imm |= 0xFFFFF000
+    opcode, rd, rs1, rs2, imm, funct3, funct7 = decoder.decoder(instruction)
     
     # Call ControlUnit to generate control signals
-    RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp = ControlUnit(opcode, (instruction >> 12) & 0b111, (instruction >> 25) & 0b1111111)
+    RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp = ControlUnit(opcode, funct3, funct7)
 
-    return opcode, rs1, rs2, rd, imm, RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp
+    return opcode, rs1, rs2, rd, imm, funct3, funct7, RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp
 
 def Execute(ALUOp, rs1_value, rs2_value, imm):
     # Perform ALU operation
@@ -98,13 +92,7 @@ def Writeback(rd, result, RegWrite):
 
 def ControlUnit(opcode, funct3, funct7):
     # Control signals
-    RegWrite = 0
-    Branch = 0
-    ALUSrc = 0
-    ALUOp = 0
-    MemWrite = 0
-    MemtoReg = 0
-    MemRead = 0
+    global RegWrite, Branch, ALUSrc, ALUOp, MemWrite, MemtoReg, MemRead, rf
 
     '''
     S: sw
@@ -147,58 +135,59 @@ def ControlUnit(opcode, funct3, funct7):
 
 # Main function
 def main():
-    
-    pc = 0  # Program counter
-    total_clock_cycles = 0  # Total clock cycles
+    global pc, total_clock_cycles, branch_target, alu_zero
 
     # Ask the user for the filename
     filename = input("Enter the program file name to run:\n")
 
     # Open and read the input program text file
     with open(filename, "r") as file:
-        instructions = [int(line.strip(), 2) for line in file]
+        # Fetch, Decode, Execute, Mem, and Writeback for each instruction
+        for line in file:
+            # Fetch
+            opcode, rs1, rs2, rd, imm, funct3, funct7, RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp = Decode(line)
+            
+            # Control Unit
+            RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp = ControlUnit(opcode, funct3, funct7)
 
-    # Fetch, Decode, Execute, Mem, and Writeback for each instruction
-    for instr in instructions:
-        # Fetch
-        opcode, rs1, rs2, rd, imm, RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp = Decode(instr)
-        
-        # Control Unit
-        RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp = ControlUnit(opcode, (instr >> 12) & 0b111, (instr >> 25) & 0b1111111)
+            # Execute
+            rs1_value = 0
+            rs2_value = 0
+            if rs1 != "NA":
+                rs1_value = rf[rs1]
+            if rs2 != "NA":
+                rs2_value = rf[rs2]
+            alu_ctrl, alu_zero, branch_target = Execute(ALUOp, rs1_value, rs2_value, imm)
+            
+            # Mem
+            mem_address = alu_ctrl if ALUSrc else rs2  # Memory address for lw/sw
+            write_data = rs2_value if ALUSrc else rf[rd]  # Data to write to memory for sw
+            read_data = Mem(mem_address, write_data, MemRead, MemWrite)
+            
+            # Writeback
+            if RegWrite:
+                if rd != "NA":
+                    rf[rd] = read_data if MemRead else alu_ctrl
+            
+            # Increment total clock cycles
+            total_clock_cycles += 1
 
-        # Execute
-        rs1_value = rf[rs1]
-        rs2_value = rf[rs2]
-        alu_ctrl, alu_zero, branch_target = Execute(ALUOp, rs1_value, rs2_value, imm)
-        
-        # Mem
-        mem_address = alu_ctrl if ALUSrc else rs2  # Memory address for lw/sw
-        write_data = rs2_value if ALUSrc else rf[rd]  # Data to write to memory for sw
-        read_data = Mem(mem_address, write_data, MemRead, MemWrite)
-        
-        # Writeback
-        if RegWrite:
-            rf[rd] = read_data if MemRead else alu_ctrl
-        
-        # Increment total clock cycles
-        total_clock_cycles += 1
+            # Print results
+            if MemWrite:
+                print(f"\ntotal_clock_cycles {total_clock_cycles} :")
+                print(f"memory 0x{mem_address:02X} is modified to 0x{write_data:02X}")
+                print(f"pc is modified to 0x{branch_target:02X}")
 
-        # Print results
-        if MemWrite:
-            print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-            print(f"memory 0x{mem_address:02X} is modified to 0x{write_data:02X}")
-            print(f"pc is modified to 0x{branch_target:02X}")
-
-        elif Branch:
-            print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-            print(f"pc is modified to 0x{branch_target:02X}")
-        
-        elif MemRead:
-            print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-            print(f"x{rd} is modified to 0x{read_data:02X}")
-        
-        else:
-            print(f"\ntotal_clock_cycles {total_clock_cycles} :\nNo memory operation performed.")
+            elif Branch:
+                print(f"\ntotal_clock_cycles {total_clock_cycles} :")
+                print(f"pc is modified to 0x{branch_target:02X}")
+            
+            elif MemRead:
+                print(f"\ntotal_clock_cycles {total_clock_cycles} :")
+                print(f"x{rd} is modified to 0x{read_data:02X}")
+            
+            else:
+                print(f"\ntotal_clock_cycles {total_clock_cycles} :\nNo memory operation performed.")
 
     print("\nprogram terminated:")
     print(f"total execution time is {total_clock_cycles} cycles")
