@@ -5,6 +5,15 @@ branch_target = 0
 alu_zero = 0
 total_clock_cycles = 0
 
+# Control signals
+RegWrite = 0
+Branch = 0
+ALUSrc = 0
+ALUOp = 0
+MemWrite = 0
+MemtoReg = 0
+MemRead = 0
+
 # Register file initialization
 rf = [0] * 32
 rf[1] = 0x20
@@ -45,16 +54,22 @@ def Decode(instruction):
 
 def Execute(ALUOp, rs1_value, rs2_value, imm):
     # Perform ALU operation
-    alu_result = 0
-    zero = 0
+    alu_ctrl = 0
     
     # ALU operations
-    if ALUOp == 0b000:  # add
-        alu_result = rs1_value + rs2_value
-    elif ALUOp == 0b1001:  # sub
-        alu_result = rs1_value - rs2_value
-    # Other ALU operations can be added here
+    if ALUOp == 0b0000:  # AND
+        alu_ctrl = rs1_value and rs2_value
+    elif ALUOp == 0b0001:  # OR
+        alu_ctrl = rs1_value or rs2_value
+    elif ALUOp == 0b0010:  # add
+        alu_ctrl = rs1_value + rs2_value
+    elif ALUOp == 0b0110:  # sub
+        alu_ctrl = rs1_value - rs2_value
     
+    # Set zero flag if result is zero
+    if alu_ctrl == 0:
+        alu_zero = 1
+
     # Calculate branch target address
     branch_target = 0
     if ALUOp == 0b001:  # beq
@@ -62,11 +77,7 @@ def Execute(ALUOp, rs1_value, rs2_value, imm):
     else:
         branch_target = 0  # For other instructions, branch target address remains 0
     
-    # Set zero flag if result is zero
-    if alu_result == 0:
-        zero = 1
-    
-    return alu_result, zero, branch_target
+    return alu_ctrl, alu_zero, branch_target
 
 def Mem(mem_address, write_data, MemRead, MemWrite):
     mem_address %= 64  # Ensure memory address wraps around if it exceeds array size
@@ -86,39 +97,44 @@ def Writeback(rd, result, RegWrite):
         rf[rd] = result
 
 def ControlUnit(opcode, funct3, funct7):
-    # Generate control signals based on opcode and function field values
-    RegWrite = 1
-    MemRead = 0
-    MemWrite = 0
+    # Control signals
+    RegWrite = 0
     Branch = 0
     ALUSrc = 0
-    ALUOp = 0b00  # default for add, and, or, sub
+    ALUOp = 0
+    MemWrite = 0
+    MemtoReg = 0
+    MemRead = 0
 
-    if opcode == 0b0000011:  # lw
-        MemRead = 1
-        ALUSrc = 1
-        ALUOp = 0b000
-    elif opcode == 0b0100011:  # sw
+    '''
+    S: sw
+    SB: beq
+    I: addi, ori, andi, lw
+    R: add, and, or, sub
+    '''
+
+    if opcode == 0b0100011:  # sw
         MemWrite = 1
         ALUSrc = 1
         ALUOp = 0b000
     elif opcode == 0b1100011:  # beq
         Branch = 1
         ALUOp = 0b001
+    elif opcode == 0b0010011: # I-type
+        if funct3 == 0b000: # addi
+            ALUOp = 0b000
+        elif funct3 == 0b110: # ori
+            ALUOp = 0b000
+        elif funct3 == 0b111: # andi
+            ALUOp = 0b000
+    elif opcode == 0b0000011:  # lw
+        MemRead = 1
+        ALUSrc = 1
+        ALUOp = 0b000
     elif opcode == 0b0110011:  # R-type
         if funct7 == 0b0000000:
             if funct3 == 0b000:  # add
                 ALUOp = 0b000
-            elif funct3 == 0b001:  # sll
-                ALUOp = 0b010
-            elif funct3 == 0b010:  # slt
-                ALUOp = 0b011
-            elif funct3 == 0b011:  # sltu
-                ALUOp = 0b100
-            elif funct3 == 0b100:  # xor
-                ALUOp = 0b101
-            elif funct3 == 0b101:  # srl
-                ALUOp = 0b110
             elif funct3 == 0b110:  # or
                 ALUOp = 0b111
             elif funct3 == 0b111:  # and
@@ -126,13 +142,12 @@ def ControlUnit(opcode, funct3, funct7):
         elif funct7 == 0b0100000:
             if funct3 == 0b000:  # sub
                 ALUOp = 0b1001
-            elif funct3 == 0b101:  # sra
-                ALUOp = 0b1101
 
     return RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp
 
 # Main function
 def main():
+    
     pc = 0  # Program counter
     total_clock_cycles = 0  # Total clock cycles
 
@@ -154,27 +169,34 @@ def main():
         # Execute
         rs1_value = rf[rs1]
         rs2_value = rf[rs2]
-        alu_result, zero, branch_target = Execute(ALUOp, rs1_value, rs2_value, imm)
+        alu_ctrl, alu_zero, branch_target = Execute(ALUOp, rs1_value, rs2_value, imm)
         
         # Mem
-        mem_address = alu_result if ALUSrc else rs2  # Memory address for lw/sw
+        mem_address = alu_ctrl if ALUSrc else rs2  # Memory address for lw/sw
         write_data = rs2_value if ALUSrc else rf[rd]  # Data to write to memory for sw
         read_data = Mem(mem_address, write_data, MemRead, MemWrite)
         
         # Writeback
         if RegWrite:
-            rf[rd] = read_data if MemRead else alu_result
+            rf[rd] = read_data if MemRead else alu_ctrl
         
         # Increment total clock cycles
         total_clock_cycles += 1
 
         # Print results
         if MemWrite:
-            print(f"\ntotal_clock_cycles {total_clock_cycles} :\nmemory 0x{mem_address:02X} is modified to 0x{write_data:02X}")
+            print(f"\ntotal_clock_cycles {total_clock_cycles} :")
+            print(f"memory 0x{mem_address:02X} is modified to 0x{write_data:02X}")
+            print(f"pc is modified to 0x{branch_target:02X}")
+
         elif Branch:
-            print(f"\ntotal_clock_cycles {total_clock_cycles} :\npc is modified to 0x{branch_target:02X}")
+            print(f"\ntotal_clock_cycles {total_clock_cycles} :")
+            print(f"pc is modified to 0x{branch_target:02X}")
+        
         elif MemRead:
-            print(f"\ntotal_clock_cycles {total_clock_cycles} :\nx{rd} is modified to 0x{read_data:02X}")
+            print(f"\ntotal_clock_cycles {total_clock_cycles} :")
+            print(f"x{rd} is modified to 0x{read_data:02X}")
+        
         else:
             print(f"\ntotal_clock_cycles {total_clock_cycles} :\nNo memory operation performed.")
 
