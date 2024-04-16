@@ -3,17 +3,25 @@ import math
 
 # Function to sign-extend a 12-bit immediate value
 # Ronald Chen
-def sign_extend_12(imm):
-    if imm & 0x800: # Check if the sign bit is set
-        imm |= 0xFFFFF000 # Perform sign extension
-    return int(imm) # Cast to signed int
+def sign_extend_12(value):
+    # Check if the sign bit is set
+    if value & (1 << 11):
+        # If set, extend with 1s
+        return (value & 0x7FF) - 0x800
+    else:
+        # Otherwise, extend with 0s
+        return value & 0x7FF
 
 # Function to sign-extend a 13-bit immediate value
 # Ronald Chen
-def sign_extend_13(imm):
-    if imm & 0x1000: # Check if the sign bit is set
-        imm |= 0xFFFFE000 # Perform sign extension
-    return int(imm) # Cast to signed int
+def sign_extend_13(value):
+    # Check if the sign bit is set
+    if value & (1 << 12):
+        # If set, extend with 1s
+        return (value & 0x1FFF) - 0x2000
+    else:
+        # Otherwise, extend with 0s
+        return value & 0x1FFF
 
 # Function to decode R-type instruction
 # Robert Palermo
@@ -202,4 +210,17 @@ def decoder(binary):
         return decode_UJ(instr)
 
 
-
+# testing with the HW3 given values and custom values
+decoder("00000000001100100000001010110011")
+print()
+decoder("00000000101001100111011010010011")
+print()
+decoder("11111110001100100000100000100011")
+print()
+decoder("00000001111000101001001101100011")
+print()
+decoder("00000000101000000000000011101111")
+print()
+decoder("11111110010100010000101100100011")
+print()
+decoder("11111110001000011001101111100011")
