@@ -222,7 +222,7 @@ def decode_UJ(instr):
 def decoder(binary):
     instr = 0
     binary = str(binary)
-    print(binary)
+    # print(binary)
     for i, bit in enumerate(binary):
         if bit == '1':
             instr |= (1 << (31 - i))

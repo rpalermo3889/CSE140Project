@@ -37,7 +37,7 @@ def Fetch():
     pc = branch_target if branch_target != 0 else next_pc
 
 def Decode(instruction):
-    print("Decode(instruction)",instruction)
+    # print("Decode(instruction)",instruction)
     # Extract opcode and operands from instruction
     opcode, rd, rs1, rs2, imm, funct3, funct7 = decoder.decoder(instruction)
     
