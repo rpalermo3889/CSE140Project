@@ -34,7 +34,13 @@ def Fetch():
     pc += 4
     next_pc = pc
     # Update branch_target if needed
-    pc = branch_target if branch_target != 0 else next_pc
+    if branch_target != 0:
+        pc += branch_target-4
+    else:
+        pc = next_pc
+
+    print("pc value: ", pc)
+    return pc
 
 def Decode(instruction):
     # print("Decode(instruction)",instruction)
@@ -67,6 +73,9 @@ def Execute(ALUOp, rs1_value, rs2_value, imm):
     # Calculate branch target address
     branch_target = 0
     if ALUOp == 0b001:  # beq
+        if rs1_value == rs2_value:
+            print(f"branch {imm}")
+
         branch_target = imm  # Branch target address is the immediate value
     else:
         branch_target = 0  # For other instructions, branch target address remains 0
@@ -133,6 +142,10 @@ def ControlUnit(opcode, funct3, funct7):
 
     return RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp
 
+"""
+TODO: update register files correctly, update memory files correctly
+"""
+
 # Main function
 def main():
     global pc, total_clock_cycles, branch_target, alu_zero
@@ -145,14 +158,15 @@ def main():
         # Fetch, Decode, Execute, Mem, and Writeback for each instruction
         for line in file:
             # Fetch
+            pc = Fetch()
             opcode, rs1, rs2, rd, imm, funct3, funct7, RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp = Decode(line)
             
             # Control Unit
             RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp = ControlUnit(opcode, funct3, funct7)
 
-            # Execute
             rs1_value = 0
             rs2_value = 0
+            # Execute
             if rs1 != "NA":
                 rs1_value = rf[rs1]
             if rs2 != "NA":
@@ -176,11 +190,11 @@ def main():
             if MemWrite:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
                 print(f"memory 0x{mem_address:02X} is modified to 0x{write_data:02X}")
-                print(f"pc is modified to 0x{branch_target:02X}")
+                print(f"pc is modified to 0x{pc:02X}")
 
             elif Branch:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-                print(f"pc is modified to 0x{branch_target:02X}")
+                print(f"pc is modified to 0x{pc:02X}")
             
             elif MemRead:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
