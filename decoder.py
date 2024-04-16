@@ -32,35 +32,45 @@ def decode_R(instr, opcode):
     funct3 = (instr >> 12) & 0x7
     funct7 = (instr >> 25) & 0x7F
 
-    print("Instruction Type: R")
+    #print("Instruction Type: R")
     if funct7 == 0b00000000:
         if (funct3 | (funct7 << 3)) == 0b0000000:
-            print("Operation: add")
+            #print("Operation: add")
+            pass
         elif (funct3 | (funct7 << 3)) == 0b0000001:
-            print("Operation: sll")
+            #print("Operation: sll")
+            pass
         elif (funct3 | (funct7 << 3)) == 0b0000101:
-            print("Operation: srl")
+            #print("Operation: srl")
+            pass
         elif (funct3 | (funct7 << 3)) == 0b0000010:
-            print("Operation: slt")
+            #print("Operation: slt")
+            pass
         elif (funct3 | (funct7 << 3)) == 0b0000011:
-            print("Operation: sltu")
+            #print("Operation: sltu")
+            pass
         elif (funct3 | (funct7 << 3)) == 0b0000100:
-            print("Operation: xor")
+            #print("Operation: xor")
+            pass
         elif (funct3 | (funct7 << 3)) == 0b0000110:
-            print("Operation: or")
+            #print("Operation: or")
+            pass
         elif (funct3 | (funct7 << 3)) == 0b0000111:
-            print("Operation: and")
+            #print("Operation: and")
+            pass
     elif funct7 == 0b0100000:
         if funct3 == 0b000:
-            print("Operation: sub")
+            #print("Operation: sub")
+            pass
         elif funct3 == 0b101:
-            print("Operation: sra")
+            #print("Operation: sra")
+            pass
 
-    print(f"Rs1: x{rs1}")
-    print(f"Rs2: x{rs2}")
-    print(f"Rd: x{rd}")
-    print(f"Funct3: {funct3}")
-    print(f"Funct7: {funct7}")
+    # print(f"Rs1: x{rs1}")
+    # print(f"Rs2: x{rs2}")
+    # print(f"Rd: x{rd}")
+    # print(f"Funct3: {funct3}")
+    # print(f"Funct7: {funct7}")
     # opcode, rd, rs1, rs2, imm, funct3, funct7
     return opcode, rd, rs1, rs2, "NA", funct3, funct7
 
@@ -72,44 +82,56 @@ def decode_I(instr):
     opcode = instr & 0x7F
     imm = sign_extend_12((instr >> 20) & 0x5F) # Sign extend immediate
 
-    print("Instruction Type: I")
+    #print("Instruction Type: I")
     if opcode == 0b0000011:
         funct3 = (instr >> 12) & 0b111
         if funct3 == 0b000:
-            print("Operation: lb")
+            #print("Operation: lb")
+            pass
         elif funct3 == 0b010:
-            print("Operation: lw")
+            #print("Operation: lw")
+            pass
         elif funct3 == 0b001:
-            print("Operation: lh")
+            #print("Operation: lh")
+            pass
     elif opcode == 0b0010011:
         funct3 = (instr >> 12) & 0b111
         if funct3 == 0b000:
-            print("Operation: addi")
+            #print("Operation: addi")
+            pass
         elif funct3 == 0b001:
-            print("Operation: slli")
+            #print("Operation: slli")
+            pass
         elif funct3 == 0b111:
-            print("Operation: andi")
+            #print("Operation: andi")
+            pass
         elif funct3 == 0b110:
-            print("Operation: ori")
+            #print("Operation: ori")
+            pass
         elif funct3 == 0b100:
-            print("Operation: xori")
+            #print("Operation: xori")
+            pass
         elif funct3 == 0b010:
-            print("Operation: slti")
+            #print("Operation: slti")
+            pass
         elif funct3 == 0b011:
-            print("Operation: sltiu")
+            #print("Operation: sltiu")
+            pass
         elif funct3 == 0b101:
             shtype = instr >> 25
             if shtype == 0b0000000:
-                print("Operation: srli")
+                #print("Operation: srli")
+                pass
             elif shtype == 0b0100000:
-                print("Operation: srai")
+                #print("Operation: srai")
+                pass
 
-    print(f"Rs1: x{rs1}")
-    print(f"Rd: x{rd}")
-    print(f"Immediate: {imm}", end="")
-    if imm < 0 or imm > 9:
-        print(f" (or 0x{imm & 0x5F:X})", end="")
-    print()
+    # print(f"Rs1: x{rs1}")
+    # print(f"Rd: x{rd}")
+    # print(f"Immediate: {imm}", end="")
+    # if imm < 0 or imm > 9:
+    #     print(f" (or 0x{imm & 0x5F:X})", end="")
+    # print()
     # opcode, rd, rs1, rs2, imm, funct3, funct7
     return opcode, rd, rs1, "NA", imm, "NA", "NA"
 
@@ -121,22 +143,25 @@ def decode_S(instr):
     opcode = instr & 0x7F
     imm = sign_extend_12(((instr >> 25) << 5) | ((instr >> 7) & 0x1F)) # Sign extend immediate
 
-    print("Instruction Type: S")
+    #print("Instruction Type: S")
     if opcode == 0b0100011:
         funct3 = (instr >> 12) & 0b111
         if funct3 == 0b000:
-            print("Operation: sb")
+            #print("Operation: sb")
+            pass
         elif funct3 == 0b001:
-            print("Operation: sh")
+            #print("Operation: sh")
+            pass
         elif funct3 == 0b010:
-            print("Operation: sw")
+            #print("Operation: sw")
+            pass
 
-    print(f"Rs1: x{rs1}")
-    print(f"Rs2: x{rs2}")
-    print(f"Immediate: {imm}", end="")
-    if imm < 0 or imm > 9:
-        print(f" (or 0x{imm & 0xFFF:X})", end="")
-    print()
+    # print(f"Rs1: x{rs1}")
+    # print(f"Rs2: x{rs2}")
+    # print(f"Immediate: {imm}", end="")
+    # if imm < 0 or imm > 9:
+    #     print(f" (or 0x{imm & 0xFFF:X})", end="")
+    # print()
     # opcode, rd, rs1, rs2, imm, funct3, funct7
     return opcode, "NA", rs1, rs2, imm, funct3, "NA"
 
@@ -149,22 +174,26 @@ def decode_SB(instr, opcode):
     imm = sign_extend_13(((instr >> 31) << 12) | (((instr >> 7) & 0x1) << 11) |
                          (((instr >> 25) & 0x3F) << 5) | (((instr >> 8) & 0xF) << 1)) # Sign extend immediate
 
-    print("Instruction Type: SB")
+    #print("Instruction Type: SB")
     if funct3 == 0b000:
-        print("Operation: beq")
+        #print("Operation: beq")
+        pass
     elif funct3 == 0b101:
-        print("Operation: bge")
+        #print("Operation: bge")
+        pass
     elif funct3 == 0b100:
-        print("Operation: blt")
+        #print("Operation: blt")
+        pass
     elif funct3 == 0b001:
-        print("Operation: bne")
+        #print("Operation: bne")
+        pass
 
-    print(f"Rs1: x{rs1}")
-    print(f"Rs2: x{rs2}")
-    print(f"Immediate: {imm}", end="")
-    if imm < 0 or imm > 9:
-        print(f" (or 0x{imm & 0xFFF:X})", end="")
-    print()
+    # print(f"Rs1: x{rs1}")
+    # print(f"Rs2: x{rs2}")
+    # print(f"Immediate: {imm}", end="")
+    # if imm < 0 or imm > 9:
+    #     print(f" (or 0x{imm & 0xFFF:X})", end="")
+    # print()
     # opcode, rd, rs1, rs2, imm, funct3, funct7
     return opcode, "NA", rs1, rs2, imm, funct3, "NA"
 
@@ -176,15 +205,16 @@ def decode_UJ(instr):
     imm = ((instr >> 31) << 20) | (((instr >> 12) & 0xFF) << 12) | \
           (((instr >> 20) & 0x1) << 11) | (((instr >> 21) & 0x3FF) << 1)
 
-    print("Instruction Type: UJ")
+    #print("Instruction Type: UJ")
     if opcode == 0b1101111:
-        print("Operation: jal")
+        #print("Operation: jal")
+        pass
 
-    print(f"Rd: x{rd}")
-    print(f"Immediate: {imm}", end="")
-    if imm < 0 or imm > 9:
-        print(f" (or 0x{imm & 0xFFF:X})", end="")
-    print()
+    # print(f"Rd: x{rd}")
+    # print(f"Immediate: {imm}", end="")
+    # if imm < 0 or imm > 9:
+    #     print(f" (or 0x{imm & 0xFFF:X})", end="")
+    # print()
     # opcode, rd, rs1, rs2, imm, funct3, funct7
     return opcode, rd, "NA", "NA", imm, "NA", "NA"
 
@@ -208,19 +238,3 @@ def decoder(binary):
         return decode_SB(instr, opcode)
     elif opcode == 0b1101111: # UJ-type
         return decode_UJ(instr)
-
-
-# testing with the HW3 given values and custom values
-decoder("00000000001100100000001010110011")
-print()
-decoder("00000000101001100111011010010011")
-print()
-decoder("11111110001100100000100000100011")
-print()
-decoder("00000001111000101001001101100011")
-print()
-decoder("00000000101000000000000011101111")
-print()
-decoder("11111110010100010000101100100011")
-print()
-decoder("11111110001000011001101111100011")
