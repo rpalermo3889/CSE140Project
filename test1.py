@@ -1,7 +1,6 @@
 import decoder
 # Global variables
 pc = 0
-next_pc = 0
 branch_target = 0
 alu_zero = 0
 total_clock_cycles = 0
@@ -28,7 +27,7 @@ d_mem[0x70] = 0x5
 d_mem[0x74] = 0x10
 
 def Fetch():
-    global pc, next_pc, branch_target
+    global pc, branch_target
     # Read instruction from program text file based on pc value
     # Increment pc by 4
     pc += 4
@@ -45,9 +44,10 @@ def Decode(instruction):
     # Extract opcode and operands from instruction
     opcode, rd, rs1, rs2, imm, funct3, funct7 = decoder.decoder(instruction)
 
-    return opcode, rs1, rs2, rd, imm, funct3, funct7
+    return opcode, rd, rs1, rs2, imm, funct3, funct7
 
-def Execute(ALUOp, rs1_value, rs2_value, imm):
+def Execute(opcode, ALUOp, rs1_value, rs2_value, imm):
+    global alu_zero
     # Perform ALU operation
     alu_ctrl = 0
     
@@ -67,8 +67,8 @@ def Execute(ALUOp, rs1_value, rs2_value, imm):
 
     # Calculate branch target address
     branch_target = 0
-    if ALUOp == 0b001:  # beq
-        branch_target = imm  # Branch target address is the immediate value
+    if opcode == 0b1100011:  # beq
+        branch_target = (imm << 1)  # Branch target address is the immediate value
     else:
         branch_target = 0  # For other instructions, branch target address remains 0
     
@@ -105,32 +105,32 @@ def ControlUnit(opcode, funct3, funct7):
     if opcode == 0b0100011:  # sw
         MemWrite = 1
         ALUSrc = 1
-        ALUOp = 0b000
+        ALUOp = 0b0010
     elif opcode == 0b1100011:  # beq
         Branch = 1
-        ALUOp = 0b001
+        ALUOp = 0b0110
     elif opcode == 0b0010011: # I-type
         if funct3 == 0b000: # addi
-            ALUOp = 0b000
+            ALUOp = 0b0010
         elif funct3 == 0b110: # ori
-            ALUOp = 0b000
+            ALUOp = 0b0001
         elif funct3 == 0b111: # andi
-            ALUOp = 0b000
+            ALUOp = 0b0000
     elif opcode == 0b0000011:  # lw
         MemRead = 1
         ALUSrc = 1
-        ALUOp = 0b000
+        ALUOp = 0b0010
     elif opcode == 0b0110011:  # R-type
         if funct7 == 0b0000000:
             if funct3 == 0b000:  # add
-                ALUOp = 0b000
+                ALUOp = 0b0010
             elif funct3 == 0b110:  # or
-                ALUOp = 0b111
+                ALUOp = 0b0001
             elif funct3 == 0b111:  # and
-                ALUOp = 0b1000
+                ALUOp = 0b0000
         elif funct7 == 0b0100000:
             if funct3 == 0b000:  # sub
-                ALUOp = 0b1001
+                ALUOp = 0b0110
 
     return RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp
 
@@ -163,7 +163,7 @@ def main():
                 rs1_value = rf[rs1]
             if rs2 != "NA":
                 rs2_value = rf[rs2]
-            alu_ctrl, alu_zero, branch_target = Execute(ALUOp, rs1_value, rs2_value, imm)
+            alu_ctrl, alu_zero, branch_target = Execute(opcode, ALUOp, rs1_value, rs2_value, imm)
             
             # Mem
             mem_address = alu_ctrl if ALUSrc else rs2  # Memory address for lw/sw
@@ -226,11 +226,11 @@ Enter the program file name to run:
 sample_part1.txt
 
 total_clock_cycles 1 :
-x3 is modified to 0x00      # should be 0x10
+x3 is modified to 0x00      # should be 0x10 (wrong read_data)
 pc is modified to 0x04 
 
 total_clock_cycles 2 : 
-x5 is modified to 0x00      # should be 0x1b
+x5 is modified to 0x00      # should be 0x1b (wrong read_data)
 pc is modified to 0x08      # 0x8
 
 total_clock_cycles 3 : 
@@ -238,11 +238,11 @@ xNA is modified to 0x00     # Branch in output is not being called properly
 pc is modified to 0x0C      # Lower case (c)
 
 total_clock_cycles 4 : 
-x5 is modified to 0x00      # should be 0x2b
+x5 is modified to 0x00      # should be 0x2b (wrong read_data)
 pc is modified to 0x18      # should be 0x10
 
 total_clock_cycles 5 : 
-x5 is modified to 0x00      # should be 0x2f
+x5 is modified to 0x00      # should be 0x2f (wrong read_data)
 pc is modified to 0x1C      # should be 0x14
 
 total_clock_cycles 6 :
