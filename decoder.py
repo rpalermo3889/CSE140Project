@@ -88,7 +88,7 @@ def decode_I(instr):
             #print("Operation: lb")
             pass
         elif funct3 == 0b010:
-            print("Operation: lw")
+            print("\n Operation: lw")
             pass
         elif funct3 == 0b001:
             #print("Operation: lh")
@@ -152,7 +152,7 @@ def decode_S(instr):
             #print("Operation: sh")
             pass
         elif funct3 == 0b010:
-            print("Operation: sw")
+            print("\n Operation: sw")
             pass
 
     # print(f"Rs1: x{rs1}")
