@@ -217,12 +217,16 @@ if __name__ == "__main__":
 00000000010101010010000000100011
 
 Translations:
-lw x3, 4(x10)
-sub x5, x1, x2
-beq x5, x3, 12
-add x5, x5, x3
-or x5, x11, x5
-sw x5, 0(x10)
+lw x3, 4(x10)       {rd: x3, rs1: x10}          (output: x3 is modified to 0x10 {16})
+
+sub x5, x1, x2      {rd: x5, rs1: 1, rs2: 2}    (output: x5 is modified to 0x1b {27})
+
+beq x5, x3, 12      {rs1: x5, rs2: 3}
+
+add x5, x5, x3      {rd: x5, rs1: 5, rs2: 3}    (output: x5 is modified to 0x2b {43})
+or x5, x11, x5      {rd: x5, rs1: 11, rs2: x5}  (output: x5 is modified to 0x2f {47})
+
+sw x5, 0(x10)       {rs1: x10, rs2: x5}         (output: memory 0x70 is modified to 0x2f)
 
 
 Current Output:
@@ -231,24 +235,24 @@ sample_part1.txt
 
  Operation: lw
 total_clock_cycles 1 : 
-x3 is modified to 0x00      # should be 0x10 (wrong read_data)
+x3 is modified to 0x00      # should be 0x10 {16}(wrong read_data)
 pc is modified to 0x04 
 
 total_clock_cycles 2 : 
-x5 is modified to 0x00      # should be 0x1b (wrong read_data)
+x5 is modified to 0x00      # should be 0x1b {27} (wrong read_data)
 pc is modified to 0x08 
 
  Operation: beq        
 total_clock_cycles 3 : 
-xNA is modified to 0x00     # Branch in output is not being called properly
+xNA is modified to 0x00     # Branch in output is not being called properly {should be no output}
 pc is modified to 0x0C 
 
 total_clock_cycles 4 : 
-x5 is modified to 0x00      # should be 0x2b (wrong read_data) 
+x5 is modified to 0x00      # should be 0x2b {43} (wrong read_data) 
 pc is modified to 0x10 
 
 total_clock_cycles 5 : 
-x5 is modified to 0x00      # should be 0x2f (wrong read_data) 
+x5 is modified to 0x00      # should be 0x2f {47} (wrong read_data) 
 pc is modified to 0x14 
 
  Operation: sw
