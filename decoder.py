@@ -175,7 +175,7 @@ def decode_SB(instr, opcode):
 
     #print("Instruction Type: SB")
     if funct3 == 0b000:
-        #print("Operation: beq")
+        print("\n Operation: beq")
         pass
     elif funct3 == 0b101:
         #print("Operation: bge")
