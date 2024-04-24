@@ -16,15 +16,15 @@ MemRead = 0
 
 # Register file initialization
 rf = [0] * 32
-rf[1] = 0x20
-rf[2] = 0x5
-rf[10] = 0x70
-rf[11] = 0x4
+rf[1] = 20
+rf[2] = 5
+rf[10] = 70
+rf[11] = 4
 
 # Data memory initialization
-d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
-d_mem[0x70] = 0x5
-d_mem[0x74] = 0x10
+d_mem = [0] * (74 + 1)  # Increase size of the data memory to 64 entries
+d_mem[70] = 5
+d_mem[74] = 10
 
 def Fetch():
     global pc, branch_target
@@ -46,18 +46,29 @@ def Decode(instruction):
 
     return opcode, rd, rs1, rs2, imm, funct3, funct7
 
-def Execute(ALUOp, rs1_value, rs2_value, imm):
-    global alu_zero, branch_target
+def Execute(ALUOp, rs1, rs2, imm):
+    global alu_zero, branch_target, d_mem, rf
     # Perform ALU operation
     alu_ctrl = 0
+
+    if rs1 != "NA":
+        rs1_value = rf[rs1]
+    if rs2 != "NA":
+        rs2_value = rf[rs2]
     
     # ALU operations
     if ALUOp == 0b0000:  # AND
         alu_ctrl = rs1_value and rs2_value
+
     elif ALUOp == 0b0001:  # OR
         alu_ctrl = rs1_value or rs2_value
+
     elif ALUOp == 0b0010:  # add
-        alu_ctrl = rs1_value + rs2_value
+        if rs2 == "NA":
+            alu_ctrl = rs1_value + imm
+        else:
+            alu_ctrl = rs1_value + rs2_value
+    
     elif ALUOp == 0b0110:  # sub
         alu_ctrl = rs1_value - rs2_value
         
@@ -73,7 +84,7 @@ def Execute(ALUOp, rs1_value, rs2_value, imm):
     return alu_ctrl, alu_zero, branch_target
 
 def Mem(mem_address, write_data, MemRead, MemWrite):
-    mem_address %= 64  # Ensure memory address wraps around if it exceeds array size
+    # mem_address %= 64  # Ensure memory address wraps around if it exceeds array size
 
     if MemRead:
         read_data = d_mem[mem_address]
@@ -116,9 +127,13 @@ def ControlUnit(opcode, funct3, funct7):
     elif opcode == 0b0000011:  # lw
         MemRead = 1
         ALUSrc = 1
+        RegWrite = 1
+        MemtoReg = 1
         ALUOp = 0b0010  # ALU: add
 
     elif opcode == 0b0010011: # I-type
+        RegWrite = 1
+        ALUSrc = 1
         if funct3 == 0b000: # addi
             ALUOp = 0b0010  # ALU: add
         elif funct3 == 0b110: # ori
@@ -127,6 +142,7 @@ def ControlUnit(opcode, funct3, funct7):
             ALUOp = 0b0000  # ALU: AND
     
     elif opcode == 0b0110011:  # R-type
+        RegWrite = 1
         if funct7 == 0b0000000:
             if funct3 == 0b000:  # add
                 ALUOp = 0b0010  # ALU: add
@@ -165,15 +181,14 @@ def main():
             # Execute
             rs1_value = 0
             rs2_value = 0
-            if rs1 != "NA":
-                rs1_value = rs1
-            if rs2 != "NA":
-                rs2_value = rs2
-            alu_ctrl, alu_zero, branch_target = Execute(ALUOp, rs1_value, rs2_value, imm)
+            print("rs1: ", rs1)            
+            print("rs2: ", rs2)
+            
+            alu_ctrl, alu_zero, branch_target = Execute(ALUOp, rs1, rs2, imm)
             
             # Mem
-            mem_address = alu_ctrl if ALUSrc else rs2  # Memory address for lw/sw
-            write_data = rs2_value if ALUSrc else rf[rd]  # Data to write to memory for sw
+            mem_address = alu_ctrl if ALUSrc == 1 else rs2  # Memory address for lw/sw
+            write_data = rs2_value if ALUSrc == 1 else rf[rd]  # Data to write to memory for sw
             read_data = Mem(mem_address, write_data, MemRead, MemWrite)
             
             # Writeback
@@ -186,12 +201,12 @@ def main():
             # Print results
             if MemWrite:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-                print(f"memory 0x{mem_address:02X} is modified to 0x{write_data:02X}")
+                print(f"memory 0x{mem_address} is modified to 0x{write_data}")
                 print(f"pc is modified to 0x{pc:02X}")
 
             elif MemRead:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-                print(f"x{rd} is modified to 0x{read_data:02X}")
+                print(f"x{rd} is modified to 0x{read_data}")
                 print(f"pc is modified to 0x{pc:02X}")
 
             elif Branch:
@@ -235,7 +250,7 @@ sample_part1.txt
 
  Operation: lw
 total_clock_cycles 1 : 
-x3 is modified to 0x00      # should be 0x10 {16}(wrong read_data)
+x3 is modified to 0x00
 pc is modified to 0x04 
 
 total_clock_cycles 2 : 
