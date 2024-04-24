@@ -59,7 +59,7 @@ def decode_R(instr, opcode):
             pass
     elif funct7 == 0b0100000:
         if funct3 == 0b000:
-            #print("Operation: sub")
+            #print("\n Operation: sub")
             pass
         elif funct3 == 0b101:
             #print("Operation: sra")
@@ -88,7 +88,7 @@ def decode_I(instr):
             #print("Operation: lb")
             pass
         elif funct3 == 0b010:
-            print("\n Operation: lw")
+            #print("\n Operation: lw")
             pass
         elif funct3 == 0b001:
             #print("Operation: lh")

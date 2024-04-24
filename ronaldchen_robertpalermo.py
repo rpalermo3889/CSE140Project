@@ -16,15 +16,15 @@ MemRead = 0
 
 # Register file initialization
 rf = [0] * 32
-rf[1] = 20
-rf[2] = 5
-rf[10] = 70
-rf[11] = 4
+rf[1] = 0x20
+rf[2] = 0x5
+rf[10] = 0x70
+rf[11] = 0x4
 
 # Data memory initialization
-d_mem = [0] * (74 + 1)  # Increase size of the data memory to 64 entries
-d_mem[70] = 5
-d_mem[74] = 10
+d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
+d_mem[0x70] = 5
+d_mem[0x74] = 10
 
 def Fetch():
     global pc, branch_target
@@ -71,7 +71,7 @@ def Execute(ALUOp, rs1, rs2, imm):
     
     elif ALUOp == 0b0110:  # sub
         alu_ctrl = rs1_value - rs2_value
-        
+    
         if rs1_value == rs2_value:
             branch_target = imm  # Branch target address is the immediate value
         else:
@@ -107,6 +107,12 @@ def Writeback():
 def ControlUnit(opcode, funct3, funct7):
     # Control signals
     global RegWrite, Branch, ALUSrc, ALUOp, MemWrite, MemtoReg, MemRead
+    RegWrite = 0
+    MemRead = 0
+    MemWrite = 0
+    Branch = 0
+    ALUSrc = 0
+    ALUOp = 0
 
     '''
     S: sw
@@ -178,40 +184,40 @@ def main():
             # Control Unit
             RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp = ControlUnit(opcode, funct3, funct7)
 
-            # Execute
-            rs1_value = 0
-            rs2_value = 0
-            print("rs1: ", rs1)            
-            print("rs2: ", rs2)
-            
+            # Execute 
             alu_ctrl, alu_zero, branch_target = Execute(ALUOp, rs1, rs2, imm)
             
             # Mem
             mem_address = alu_ctrl if ALUSrc == 1 else rs2  # Memory address for lw/sw
-            write_data = rs2_value if ALUSrc == 1 else rf[rd]  # Data to write to memory for sw
+            write_data = rs2 if ALUSrc == 1 else rf[rd]  # Data to write to memory for sw
             read_data = Mem(mem_address, write_data, MemRead, MemWrite)
-            
+
             # Writeback
             total_clock_cycles = Writeback()
 
-            if RegWrite:
+            if RegWrite == 1:
                 if rd != "NA":
-                    rf[rd] = read_data if MemRead else alu_ctrl
+                    rf[rd] = read_data if MemRead == 1 else alu_ctrl
 
             # Print results
-            if MemWrite:
+            if Branch:
+                print(f"\ntotal_clock_cycles {total_clock_cycles} :")
+                print(f"pc is modified to 0x{pc:x}")
+            
+            elif MemWrite:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
                 print(f"memory 0x{mem_address} is modified to 0x{write_data}")
-                print(f"pc is modified to 0x{pc:02X}")
+                print(f"pc is modified to 0x{pc:x}")
 
             elif MemRead:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
                 print(f"x{rd} is modified to 0x{read_data}")
-                print(f"pc is modified to 0x{pc:02X}")
+                print(f"pc is modified to 0x{pc:x}")
 
-            elif Branch:
+            elif RegWrite:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-                print(f"pc is modified to 0x{pc:02X}")
+                print(f"x{rd} is modified to 0x{rf[rd]:x}")
+                print(f"pc is modified to 0x{pc:x}")
             
             else:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :\nNo memory operation performed.")
@@ -250,11 +256,11 @@ sample_part1.txt
 
  Operation: lw
 total_clock_cycles 1 : 
-x3 is modified to 0x00
+x3 is modified to 0x10
 pc is modified to 0x04 
 
 total_clock_cycles 2 : 
-x5 is modified to 0x00      # should be 0x1b {27} (wrong read_data)
+x5 is modified to 0x1b
 pc is modified to 0x08 
 
  Operation: beq        
