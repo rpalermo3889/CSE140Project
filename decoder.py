@@ -124,6 +124,11 @@ def decode_I(instr):
             elif shtype == 0b0100000:
                 #print("Operation: srai")
                 pass
+    elif opcode == 0b1100111:
+        funct3 = (instr >> 12) & 0b111
+        print("\n Operation: jalr")
+        pass
+
 
     # print(f"Rs1: x{rs1}")
     # print(f"Rd: x{rd}")
@@ -152,7 +157,7 @@ def decode_S(instr):
             #print("Operation: sh")
             pass
         elif funct3 == 0b010:
-            #print("\n Operation: sw")
+            print("\n Operation: sw")
             pass
 
     # print(f"Rs1: x{rs1}")
@@ -206,7 +211,7 @@ def decode_UJ(instr):
 
     #print("Instruction Type: UJ")
     if opcode == 0b1101111:
-        #print("Operation: jal")
+        print("\n Operation: jal")
         pass
 
     # print(f"Rd: x{rd}")
