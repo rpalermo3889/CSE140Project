@@ -23,8 +23,8 @@ rf[11] = 0x4
 
 # Data memory initialization
 d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
-d_mem[0x70] = 5
-d_mem[0x74] = 10
+d_mem[0x70] = 0x5
+d_mem[0x74] = 0x10
 
 def Fetch():
     global pc, branch_target
@@ -61,10 +61,10 @@ def Execute(ALUOp, rs1, rs2, imm):
         alu_ctrl = rs1_value and rs2_value
 
     elif ALUOp == 0b0001:  # OR
-        alu_ctrl = rs1_value or rs2_value
+        alu_ctrl = rs1_value | rs2_value
 
     elif ALUOp == 0b0010:  # add
-        if rs2 == "NA":
+        if imm != "NA":
             alu_ctrl = rs1_value + imm
         else:
             alu_ctrl = rs1_value + rs2_value
@@ -162,10 +162,6 @@ def ControlUnit(opcode, funct3, funct7):
 
     return RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp
 
-"""
-TODO: update register files correctly, update memory files correctly
-"""
-
 # Main function
 def main():
     global pc, branch_target, alu_zero
@@ -189,12 +185,11 @@ def main():
             
             # Mem
             mem_address = alu_ctrl if ALUSrc == 1 else rs2  # Memory address for lw/sw
-            write_data = rs2 if ALUSrc == 1 else rf[rd]  # Data to write to memory for sw
+            write_data = rf[rs2] if rs2 != "NA" else rs2 # Data to write to memory for sw
             read_data = Mem(mem_address, write_data, MemRead, MemWrite)
 
             # Writeback
             total_clock_cycles = Writeback()
-
             if RegWrite == 1:
                 if rd != "NA":
                     rf[rd] = read_data if MemRead == 1 else alu_ctrl
@@ -206,12 +201,12 @@ def main():
             
             elif MemWrite:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-                print(f"memory 0x{mem_address} is modified to 0x{write_data}")
+                print(f"memory 0x{mem_address:x} is modified to 0x{write_data:x}")
                 print(f"pc is modified to 0x{pc:x}")
 
             elif MemRead:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-                print(f"x{rd} is modified to 0x{read_data}")
+                print(f"x{rd} is modified to 0x{read_data:x}")
                 print(f"pc is modified to 0x{pc:x}")
 
             elif RegWrite:
@@ -239,46 +234,41 @@ if __name__ == "__main__":
 
 Translations:
 lw x3, 4(x10)       {rd: x3, rs1: x10}          (output: x3 is modified to 0x10 {16})
-
 sub x5, x1, x2      {rd: x5, rs1: 1, rs2: 2}    (output: x5 is modified to 0x1b {27})
-
 beq x5, x3, 12      {rs1: x5, rs2: 3}
 
 add x5, x5, x3      {rd: x5, rs1: 5, rs2: 3}    (output: x5 is modified to 0x2b {43})
+
 or x5, x11, x5      {rd: x5, rs1: 11, rs2: x5}  (output: x5 is modified to 0x2f {47})
 
-sw x5, 0(x10)       {rs1: x10, rs2: x5}         (output: memory 0x70 is modified to 0x2f)
+sw x5, 0(x10)       {rs1: x10, rs2: x5}         (output: memory 0x70 is modified to 0x2f {memory 112 is modified to 47})
 
 
 Current Output:
 Enter the program file name to run:
 sample_part1.txt
 
- Operation: lw
-total_clock_cycles 1 : 
+total_clock_cycles 1 :
 x3 is modified to 0x10
-pc is modified to 0x04 
+pc is modified to 0x4 
 
-total_clock_cycles 2 : 
+total_clock_cycles 2 :
 x5 is modified to 0x1b
-pc is modified to 0x08 
+pc is modified to 0x8 
 
- Operation: beq        
-total_clock_cycles 3 : 
-xNA is modified to 0x00     # Branch in output is not being called properly {should be no output}
-pc is modified to 0x0C 
+total_clock_cycles 3 :
+pc is modified to 0xc 
 
-total_clock_cycles 4 : 
-x5 is modified to 0x00      # should be 0x2b {43} (wrong read_data) 
-pc is modified to 0x10 
+total_clock_cycles 4 :
+x5 is modified to 0x2b
+pc is modified to 0x10
 
-total_clock_cycles 5 : 
-x5 is modified to 0x00      # should be 0x2f {47} (wrong read_data) 
-pc is modified to 0x14 
+total_clock_cycles 5 :
+x5 is modified to 0x2f
+pc is modified to 0x14
 
- Operation: sw
 total_clock_cycles 6 :
-memory 0x0F is modified to 0x05     # memory 0x70 is modified to 0x2f (mem_address and write_data is outputting wrong)
+memory 0x70 is modified to 0x2f
 pc is modified to 0x18
 
 program terminated:

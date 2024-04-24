@@ -152,7 +152,7 @@ def decode_S(instr):
             #print("Operation: sh")
             pass
         elif funct3 == 0b010:
-            print("\n Operation: sw")
+            #print("\n Operation: sw")
             pass
 
     # print(f"Rs1: x{rs1}")
@@ -175,7 +175,7 @@ def decode_SB(instr, opcode):
 
     #print("Instruction Type: SB")
     if funct3 == 0b000:
-        print("\n Operation: beq")
+        #print("\n Operation: beq")
         pass
     elif funct3 == 0b101:
         #print("Operation: bge")
