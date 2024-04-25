@@ -14,22 +14,23 @@ MemWrite = 0
 MemtoReg = 0
 MemRead = 0
 Jump = 0
-Link = 0
 
-# Register file initialization
-#========================================================
-# Part_1
-# x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4
-
+#=============================================== Part_1 ========================================================
+# # Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
 # rf = [0] * 32
 # rf[1] = 0x20
 # rf[2] = 0x5
 # rf[10] = 0x70
 # rf[11] = 0x4
 
-# Part_2
-# s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf
+# # Data memory initialization (0x70 = 0x5, 0x74 = 0x10)
+# d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
+# d_mem[0x70] = 0x5
+# d_mem[0x74] = 0x10
 
+#=============================================== Part_2 ========================================================
+
+# # Register file initialization (s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf)
 rf = [0] * 32
 rf[8] = 0x20  # s0
 rf[10] = 0x5  # a0
@@ -37,13 +38,10 @@ rf[11] = 0x2  # a1
 rf[12] = 0xa  # a2
 rf[13] = 0xf  # a3
 
-#========================================================
-
-# Data memory initialization
-# 0x70 = 0x5, 0x74 = 0x10
+# # Data memory initialization (d_mem array to all zero’s)
 d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
-d_mem[0x70] = 0x5
-d_mem[0x74] = 0x10
+
+#=============================================== ======= ========================================================
 
 def Fetch():
     global pc, branch_target
@@ -73,9 +71,11 @@ def Execute(ALUOp, rs1, rs2, imm):
 
     if rs1 != "NA":
         rs1_value = rf[rs1]
+        #print("rs1_value: ", rs1_value)     #===============================================Print Statement========================================================
     if rs2 != "NA":
         rs2_value = rf[rs2]
-    
+        #print("rs2_value: ", rs2_value)     #===============================================Print Statement========================================================
+
     # ALU operations
     if ALUOp == 0:         # jal & jalr
         pass
@@ -99,7 +99,9 @@ def Execute(ALUOp, rs1, rs2, imm):
             branch_target = imm  # Branch target address is the immediate value
         else:
             branch_target = 0  # For other instructions, branch target address remains 0
-        
+
+    #print("alu_ctrl: ", alu_ctrl)       #===============================================Print Statement========================================================
+
     # Set zero flag if result is zero
     if alu_ctrl == 0:
         alu_zero = 1
@@ -129,7 +131,7 @@ def Writeback():
 
 def ControlUnit(opcode, funct3, funct7):
     # Control signals
-    global RegWrite, Branch, ALUSrc, ALUOp, MemWrite, MemtoReg, MemRead, Jump, Link
+    global RegWrite, Branch, ALUSrc, ALUOp, MemWrite, MemtoReg, MemRead, Jump
     RegWrite = 0
     MemRead = 0
     MemWrite = 0
@@ -137,7 +139,6 @@ def ControlUnit(opcode, funct3, funct7):
     ALUSrc = 0
     ALUOp = 0
     Jump = 0
-    Link = 0
 
     '''
     S: sw
@@ -176,7 +177,6 @@ def ControlUnit(opcode, funct3, funct7):
         RegWrite = 1
         ALUSrc = 1
         Jump = 1
-        Link = 1
     
     elif opcode == 0b0110011:  # R-type
         RegWrite = 1
@@ -192,10 +192,22 @@ def ControlUnit(opcode, funct3, funct7):
                 ALUOp = 0b0110  # ALU: sub
     
     elif opcode == 0b1101111:  # jal
+        RegWrite = 1
         Jump = 1
-        Link = 1
 
-    return RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp, Jump, Link
+    return RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp, Jump
+
+register_names = {
+    0: "zero", 1: "ra", 2: "s0", 3: "gp", 4: "tp",
+    5: "t0", 6: "t1", 7: "t2",
+    8: "s0", 9: "s1",
+    10: "a0", 11: "a1", 12: "a2", 13: "a3", 
+    14: "a4", 15: "a5", 16: "a6", 17: "a7",
+    18: "s2", 19: "s3", 20: "s4", 21: "s5", 
+    22: "s6", 23: "s7", 24: "s8", 25: "s9", 
+    26: "s10", 27: "s11", 
+    28: "t3", 29: "t4", 30: "t5", 31: "t6"
+}
 
 # Main function
 def main():
@@ -213,7 +225,7 @@ def main():
             opcode, rd, rs1, rs2, imm, funct3, funct7 = Decode(line)
             
             # Control Unit
-            RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp, Jump, Link = ControlUnit(opcode, funct3, funct7)
+            RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp, Jump = ControlUnit(opcode, funct3, funct7)
 
             # Execute 
             alu_ctrl, alu_zero, branch_target = Execute(ALUOp, rs1, rs2, imm)
@@ -227,21 +239,23 @@ def main():
             total_clock_cycles = Writeback()
             if RegWrite == 1:
                 if Jump == 1:
-                    if Link == 1:
-                        # Update destination register with PC+4 value
-                        rf[rd] = pc
+                    # Update destination register with PC+4 value
+                    rf[rd] = pc
                     # Jump to target address
-                    pc = pc + imm
+                    pc = imm
                 else:
                     # Other instructions
                     if rd != "NA":
                         rf[rd] = read_data if MemRead == 1 else alu_ctrl
+            #print("rf: ", rf)           #===============================================Print Statement========================================================
 
-            # Print results
             # TODO: fix output to use correct register and changes
+            # Print results
+            rd_name = register_names.get(rd, f"x{rd}")  # Default to "x{rd}" if rd not found in dictionary
+
             if Jump:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-                print(f"{rd} is modified to 0x{rf[rd]:x}")
+                print(f"{rd_name} is modified to 0x{rf[rd]:x}")
                 print(f"pc is modified to 0x{pc:x}")
 
             elif Branch:
@@ -255,12 +269,18 @@ def main():
 
             elif MemRead:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-                print(f"x{rd} is modified to 0x{read_data:x}")
+                
+                #print(f"x{rd} is modified to 0x{read_data:x}")         # for part_1
+                print(f"{rd_name} is modified to 0x{read_data:x}")      # for part_2
+                
                 print(f"pc is modified to 0x{pc:x}")
 
             elif RegWrite:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-                print(f"x{rd} is modified to 0x{rf[rd]:x}")
+
+                #print(f"x{rd} is modified to 0x{rf[rd]:x}")            # for part_1
+                print(f"{rd_name} is modified to 0x{rf[rd]:x}")         # for part_2
+
                 print(f"pc is modified to 0x{pc:x}")
             
             else:
@@ -282,15 +302,15 @@ if __name__ == "__main__":
 00000001111001000010000000100011
 
 Translations:
-jal x1, 8           {rd: x1}                        (output: ra is modified to 0x4)          
-jal x1, 16          {rd: x1}                        (output: a0 is modified to 0xc)      
+jal x1, 8           {rd: x1}                        (output: ra {x1} is modified to 0x4)          
+jal x1, 16          {rd: x1}                        (output: a0 {x10} is modified to 0xc {12})      
 
-add x10, x11, x12   {rd: x10, rs1: x11, rs2: x12}   (output: t5 is modified to 0x3)
-sub x30, x13, x10   {rd: x30, rs1: x13, rs2: x10}   (output: ra is modified to 0x14)
+add x10, x11, x12   {rd: x10, rs1: x11, rs2: x12}   (output: t5 {x30} is modified to 0x3)
+sub x30, x13, x10   {rd: x30, rs1: x13, rs2: x10}   (output: ra {x1} is modified to 0x14 {20})
 
-jalr x1, 0(x1)      {rd: x1, rs1: x1}               (output: ra is modified to 0x8)
+jalr x1, 0(x1)      {rd: x1, rs1: x1}               (output: ra {x1} is modified to 0x8)
 
-sw x30, 0(x8)       {rs1: x8, rs2: x30}             (output: memory 0x20 is modified to 0x3)
+sw x30, 0(x8)       {rs1: x8, rs2: x30}             (output: memory 0x20 {32} is modified to 0x3)
 
 Current Output:
 Enter the program file name to run:
@@ -298,33 +318,33 @@ sample_part2.txt
 
  Operation: jal
 total_clock_cycles 1 :
-1 is modified to 0x0                    # ra is modified to 0x4
-pc is modified to 0x4                   # pc is modified to 0x8
+1 is modified to 0x4                    # ra is modified to 0x4
+pc is modified to 0x8
 
  Operation: jal
 total_clock_cycles 2 :
-1 is modified to 0x0                    # a0 is modified to 0xc
-pc is modified to 0x8                   # pc is modified to 0xc
+1 is modified to 0xc                    # a0 is modified to 0xc
+pc is modified to 0x10                   # pc is modified to 0xc
 
  Operation: add
 total_clock_cycles 3 :
 x10 is modified to 0xc                  # t5 is modified to 0x3
-pc is modified to 0xc                   # pc is modified to 0x10
+pc is modified to 0x14                   # pc is modified to 0x10
 
  Operation: sub
 total_clock_cycles 4 :
 x30 is modified to 0x3                  # ra is modified to 0x14
-pc is modified to 0x10                  # pc is modified to 0x4
+pc is modified to 0x18                  # pc is modified to 0x4
 
  Operation: jalr
 total_clock_cycles 5 :
-x1 is modified to 0x14                  # ra is modified to 0x8
-pc is modified to 0x14                  # pc is modified to 0x14
+1 is modified to 0x1c                  # ra is modified to 0x8
+pc is modified to 0x0                 # pc is modified to 0x14
 
  Operation: sw
 total_clock_cycles 6 :
 memory 0x20 is modified to 0x3
-pc is modified to 0x18
+pc is modified to 0x4                 # pc is modified to 0x18     
 
 program terminated:
 total execution time is 6 cycles
