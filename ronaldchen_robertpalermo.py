@@ -58,6 +58,8 @@ def Fetch():
         pc = next_pc
     return pc
 
+# TODO: add a logic for pc to "jump" (jal & jalr)
+
 def Decode(instruction):
     # Extract opcode and operands from instruction
     opcode, rd, rs1, rs2, imm, funct3, funct7 = decoder.decoder(instruction)
@@ -73,9 +75,12 @@ def Execute(ALUOp, rs1, rs2, imm):
         rs1_value = rf[rs1]
     if rs2 != "NA":
         rs2_value = rf[rs2]
-
+    
     # ALU operations
-    if ALUOp == 0b0000:  # AND
+    if ALUOp == 0:         # jal & jalr
+        pass
+
+    elif ALUOp == 0b0000:  # AND
         alu_ctrl = rs1_value and rs2_value
 
     elif ALUOp == 0b0001:  # OR
@@ -233,7 +238,13 @@ def main():
                         rf[rd] = read_data if MemRead == 1 else alu_ctrl
 
             # Print results
-            if Branch:
+            # TODO: fix output to use correct register and changes
+            if Jump:
+                print(f"\ntotal_clock_cycles {total_clock_cycles} :")
+                print(f"{rd} is modified to 0x{rf[rd]:x}")
+                print(f"pc is modified to 0x{pc:x}")
+
+            elif Branch:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
                 print(f"pc is modified to 0x{pc:x}")
             
@@ -281,8 +292,47 @@ jalr x1, 0(x1)      {rd: x1, rs1: x1}               (output: ra is modified to 0
 
 sw x30, 0(x8)       {rs1: x8, rs2: x30}             (output: memory 0x20 is modified to 0x3)
 
+Current Output:
+Enter the program file name to run:
+sample_part2.txt
 
+ Operation: jal
+total_clock_cycles 1 :
+1 is modified to 0x0                    # ra is modified to 0x4
+pc is modified to 0x4                   # pc is modified to 0x8
+
+ Operation: jal
+total_clock_cycles 2 :
+1 is modified to 0x0                    # a0 is modified to 0xc
+pc is modified to 0x8                   # pc is modified to 0xc
+
+ Operation: add
+total_clock_cycles 3 :
+x10 is modified to 0xc                  # t5 is modified to 0x3
+pc is modified to 0xc                   # pc is modified to 0x10
+
+ Operation: sub
+total_clock_cycles 4 :
+x30 is modified to 0x3                  # ra is modified to 0x14
+pc is modified to 0x10                  # pc is modified to 0x4
+
+ Operation: jalr
+total_clock_cycles 5 :
+x1 is modified to 0x14                  # ra is modified to 0x8
+pc is modified to 0x14                  # pc is modified to 0x14
+
+ Operation: sw
+total_clock_cycles 6 :
+memory 0x20 is modified to 0x3
+pc is modified to 0x18
+
+program terminated:
+total execution time is 6 cycles
+
+
+#==============================================================
 Correct Output:
+
 Enter the program file name to run:
 sample_part2.txt
 
@@ -312,6 +362,7 @@ pc is modified to 0x18
 
 program terminated:
 total execution time is 6 cycles
+#==============================================================
 """
 
 

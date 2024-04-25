@@ -52,10 +52,8 @@ def Execute(ALUOp, rs1, rs2, imm):
 
     if rs1 != "NA":
         rs1_value = rf[rs1]
-        print("rs1_value: ", rs1_value)
     if rs2 != "NA":
         rs2_value = rf[rs2]
-        print("rs2_value: ", rs2_value)
     
     # ALU operations
     if ALUOp == 0b0000:  # AND
