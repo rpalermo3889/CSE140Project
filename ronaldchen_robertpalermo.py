@@ -176,7 +176,7 @@ def ControlUnit(opcode, funct3, funct7):
     elif opcode == 0b1100111: # jalr
         RegWrite = 1
         ALUSrc = 1
-        Jump = 1
+        ALUOp = 0b0010  # ALU: add
     
     elif opcode == 0b0110011:  # R-type
         RegWrite = 1
@@ -314,41 +314,40 @@ sw x30, 0(x8)       {rs1: x8, rs2: x30}             (output: memory 0x20 {32} is
 
 Current Output:
 Enter the program file name to run:
-sample_part2.txt
+sample_part2.txt 
 
- Operation: jal
+ Operation: jal       
 total_clock_cycles 1 :
-1 is modified to 0x4                    # ra is modified to 0x4
-pc is modified to 0x8
+ra is modified to 0x4 
+pc is modified to 0x8 
 
- Operation: jal
+ Operation: jal       
 total_clock_cycles 2 :
-1 is modified to 0xc                    # a0 is modified to 0xc
-pc is modified to 0x10                   # pc is modified to 0xc
+ra is modified to 0xc                   # a0 is modified to 0xc 
+pc is modified to 0x10                  # pc is modified to 0xc
 
- Operation: add
+ Operation: add       
 total_clock_cycles 3 :
-x10 is modified to 0xc                  # t5 is modified to 0x3
-pc is modified to 0x14                   # pc is modified to 0x10
+a0 is modified to 0xc                   # t5 is modified to 0x3 
+pc is modified to 0x14                  # pc is modified to 0x10
 
- Operation: sub
+ Operation: sub       
 total_clock_cycles 4 :
-x30 is modified to 0x3                  # ra is modified to 0x14
+t5 is modified to 0x3                   # ra is modified to 0x14
 pc is modified to 0x18                  # pc is modified to 0x4
 
  Operation: jalr
 total_clock_cycles 5 :
-1 is modified to 0x1c                  # ra is modified to 0x8
-pc is modified to 0x0                 # pc is modified to 0x14
+ra is modified to 0xc                  # ra is modified to 0x8
+pc is modified to 0x1c                   # pc is modified to 0x14
 
  Operation: sw
 total_clock_cycles 6 :
 memory 0x20 is modified to 0x3
-pc is modified to 0x4                 # pc is modified to 0x18     
+pc is modified to 0x20                   # pc is modified to 0x18
 
 program terminated:
 total execution time is 6 cycles
-
 
 #==============================================================
 Correct Output:
