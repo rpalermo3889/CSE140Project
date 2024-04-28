@@ -16,13 +16,13 @@ MemRead = 0
 Jump = 0
 
 #=============================================== Part_1 ========================================================
-# # Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
+# Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
 # rf = [0] * 32
 # rf[1] = 0x20
 # rf[2] = 0x5
 # rf[10] = 0x70
 # rf[11] = 0x4
-
+#
 # # Data memory initialization (0x70 = 0x5, 0x74 = 0x10)
 # d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
 # d_mem[0x70] = 0x5
@@ -30,7 +30,7 @@ Jump = 0
 
 #=============================================== Part_2 ========================================================
 
-# # Register file initialization (s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf)
+# Register file initialization (s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf)
 rf = [0] * 32
 rf[8] = 0x20  # s0
 rf[10] = 0x5  # a0
@@ -38,7 +38,7 @@ rf[11] = 0x2  # a1
 rf[12] = 0xa  # a2
 rf[13] = 0xf  # a3
 
-# # Data memory initialization (d_mem array to all zero’s)
+# Data memory initialization (d_mem array to all zero’s)
 d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
 
 #=============================================== ======= ========================================================
@@ -171,8 +171,7 @@ def ControlUnit(opcode, funct3, funct7):
             ALUOp = 0b0001  # ALU: OR
         elif funct3 == 0b111: # andi
             ALUOp = 0b0000  # ALU: AND
-    
-    # TODO: jalr is not yet properly implemented
+
     elif opcode == 0b1100111: # jalr
         RegWrite = 1
         ALUSrc = 1
@@ -223,9 +222,7 @@ def main():
         total_lines = len(lines)
 
         # Fetch, Decode, Execute, Mem, and Writeback for each instruction
-        i = 0
-        while i < total_lines:
-            i += 1
+        for i in range(total_lines):
             # Fetch
             pc, current_line = Fetch(lines, total_lines)
             opcode, rd, rs1, rs2, imm, funct3, funct7 = Decode(current_line)
@@ -253,23 +250,18 @@ def main():
                 
                 elif Jump == 1 and ALUSrc == 1:     #jalr
                     # Update destination register with PC+4 value
-                    rf[rd] = pc
+                    curr_pc = pc
                     # Jump to target address
-                    print("imm: ", imm)
-                    pc = rs1 + imm
+                    pc = rf[rs1] + imm
+                    rf[rd] = curr_pc
 
                 else:
                     # Other instructions
                     if rd != "NA":
                         rf[rd] = read_data if MemRead == 1 else alu_ctrl
 
-            # Print results
+            # Print results for part 2
             rd_name = register_names.get(rd, f"x{rd}")  # Default to "x{rd}" if rd not found in dictionary
-
-            # if Jump: # could remove this, RegWrite has the same format
-            #     print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-            #     print(f"{rd_name} is modified to 0x{rf[rd]:x}")
-            #     print(f"pc is modified to 0x{pc:x}")
 
             if Branch:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
