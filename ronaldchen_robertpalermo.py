@@ -17,30 +17,30 @@ MemRead = 0
 Jump = 0
 
 #=============================================== Part_1 ========================================================
-# Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
-rf = [0] * 32
-rf[1] = 0x20
-rf[2] = 0x5
-rf[10] = 0x70
-rf[11] = 0x4
+# # Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
+# rf = [0] * 32
+# rf[1] = 0x20
+# rf[2] = 0x5
+# rf[10] = 0x70
+# rf[11] = 0x4
 
-# Data memory initialization (0x70 = 0x5, 0x74 = 0x10)
-d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
-d_mem[0x70] = 0x5
-d_mem[0x74] = 0x10
+# # Data memory initialization (0x70 = 0x5, 0x74 = 0x10)
+# d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
+# d_mem[0x70] = 0x5
+# d_mem[0x74] = 0x10
 
 #=============================================== Part_2 ========================================================
 
-# # Register file initialization (s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf)
-# rf = [0] * 32
-# rf[8] = 0x20  # s0
-# rf[10] = 0x5  # a0
-# rf[11] = 0x2  # a1
-# rf[12] = 0xa  # a2
-# rf[13] = 0xf  # a3
+# Register file initialization (s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf)
+rf = [0] * 32
+rf[8] = 0x20  # s0
+rf[10] = 0x5  # a0
+rf[11] = 0x2  # a1
+rf[12] = 0xa  # a2
+rf[13] = 0xf  # a3
 
-# # Data memory initialization (d_mem array to all zero’s)
-# d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
+# Data memory initialization (d_mem array to all zero’s)
+d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
 
 #=============================================== ======= ========================================================
 
@@ -121,11 +121,30 @@ def Mem(mem_address, write_data, MemRead, MemWrite):
 
     return read_data
 
-def Writeback():
-    global total_clock_cycles
+def Writeback(rd, rs1, imm, read_data):
+    global total_clock_cycles, pc, rf, MemRead, Jump, ALUSrc, ALUOp, RegWrite
     
     # Increment total clock cycles
     total_clock_cycles += 1
+
+    if RegWrite == 1:
+        if Jump == 1 and ALUSrc == 0:       # jal
+            # Update destination register with PC+4 value
+            rf[rd] = pc
+            # Jump to target address
+            pc = (pc - 4) + imm
+                
+        elif Jump == 1 and ALUSrc == 1:     #jalr
+            # Update destination register with PC+4 value
+            curr_pc = pc
+            # Jump to target address
+            pc = rf[rs1] + imm
+            rf[rd] = curr_pc
+
+        else:
+            # Other instructions
+            if rd != "NA":
+                rf[rd] = read_data if MemRead == 1 else ALUOp
 
     return total_clock_cycles
 
@@ -213,7 +232,7 @@ register_names = {
 
 # Main function
 def main():
-    global pc, branch_target, alu_zero, total_clock_cycles
+    global pc, branch_target, alu_zero, total_clock_cycles, rf, MemRead, Jump, ALUSrc, ALUOp, RegWrite
 
     filename = input("Enter the program file name to run:\n")
 
@@ -242,25 +261,7 @@ def main():
             read_data = Mem(mem_address, write_data, MemRead, MemWrite)
 
             # Writeback
-            total_clock_cycles = Writeback()
-            if RegWrite == 1:
-                if Jump == 1 and ALUSrc == 0:       # jal
-                    # Update destination register with PC+4 value
-                    rf[rd] = pc
-                    # Jump to target address
-                    pc = (pc - 4) + imm
-                
-                elif Jump == 1 and ALUSrc == 1:     #jalr
-                    # Update destination register with PC+4 value
-                    curr_pc = pc
-                    # Jump to target address
-                    pc = rf[rs1] + imm
-                    rf[rd] = curr_pc
-
-                else:
-                    # Other instructions
-                    if rd != "NA":
-                        rf[rd] = read_data if MemRead == 1 else ALUOp
+            total_clock_cycles = Writeback(rd, rs1, imm, read_data)
 
             # Print results for part 2
             rd_name = register_names.get(rd, f"x{rd}")  # Default to "x{rd}" if rd not found in dictionary
@@ -277,16 +278,16 @@ def main():
             elif MemRead:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
                 
-                print(f"x{rd} is modified to 0x{read_data:x}")         # for part_1
-                #print(f"{rd_name} is modified to 0x{read_data:x}")      # for part_2
+                # print(f"x{rd} is modified to 0x{read_data:x}")         # for part_1
+                print(f"{rd_name} is modified to 0x{read_data:x}")      # for part_2
                 
                 print(f"pc is modified to 0x{pc:x}")
 
             elif RegWrite or Jump:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
 
-                print(f"x{rd} is modified to 0x{rf[rd]:x}")            # for part_1
-                #print(f"{rd_name} is modified to 0x{rf[rd]:x}")         # for part_2
+                #print(f"x{rd} is modified to 0x{rf[rd]:x}")            # for part_1
+                print(f"{rd_name} is modified to 0x{rf[rd]:x}")         # for part_2
 
                 print(f"pc is modified to 0x{pc:x}")
             
