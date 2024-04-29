@@ -34,7 +34,7 @@ def decode_R(instr, opcode):
     #print("Instruction Type: R")
     if funct7 == 0b00000000:
         if (funct3 | (funct7 << 3)) == 0b0000000:
-            print("\n Operation: add")
+            #print("\n Operation: add")
             pass
         elif (funct3 | (funct7 << 3)) == 0b0000001:
             #print("Operation: sll")
@@ -59,7 +59,7 @@ def decode_R(instr, opcode):
             pass
     elif funct7 == 0b0100000:
         if funct3 == 0b000:
-            print("\n Operation: sub")
+            #print("\n Operation: sub")
             pass
         elif funct3 == 0b101:
             #print("Operation: sra")
@@ -126,7 +126,7 @@ def decode_I(instr):
                 pass
     elif opcode == 0b1100111:
         funct3 = (instr >> 12) & 0b111
-        print("\n Operation: jalr")
+        #print("\n Operation: jalr")
         pass
 
 
@@ -157,7 +157,7 @@ def decode_S(instr):
             #print("Operation: sh")
             pass
         elif funct3 == 0b010:
-            print("\n Operation: sw")
+            #print("\n Operation: sw")
             pass
 
     # print(f"Rs1: x{rs1}")
@@ -211,7 +211,7 @@ def decode_UJ(instr):
 
     #print("Instruction Type: UJ")
     if opcode == 0b1101111:
-        print("\n Operation: jal")
+        #print("\n Operation: jal")
         pass
 
     # print(f"Rd: x{rd}")

@@ -4,12 +4,13 @@ pc = 0
 branch_target = 0
 alu_zero = 0
 total_clock_cycles = 0
+alu_ctrl = 0
+ALUOp = 0
 
 # Control signals
 RegWrite = 0
 Branch = 0
 ALUSrc = 0
-ALUOp = 0
 MemWrite = 0
 MemtoReg = 0
 MemRead = 0
@@ -17,39 +18,39 @@ Jump = 0
 
 #=============================================== Part_1 ========================================================
 # Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
-# rf = [0] * 32
-# rf[1] = 0x20
-# rf[2] = 0x5
-# rf[10] = 0x70
-# rf[11] = 0x4
-#
-# # Data memory initialization (0x70 = 0x5, 0x74 = 0x10)
-# d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
-# d_mem[0x70] = 0x5
-# d_mem[0x74] = 0x10
+rf = [0] * 32
+rf[1] = 0x20
+rf[2] = 0x5
+rf[10] = 0x70
+rf[11] = 0x4
+
+# Data memory initialization (0x70 = 0x5, 0x74 = 0x10)
+d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
+d_mem[0x70] = 0x5
+d_mem[0x74] = 0x10
 
 #=============================================== Part_2 ========================================================
 
-# Register file initialization (s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf)
-rf = [0] * 32
-rf[8] = 0x20  # s0
-rf[10] = 0x5  # a0
-rf[11] = 0x2  # a1
-rf[12] = 0xa  # a2
-rf[13] = 0xf  # a3
+# # Register file initialization (s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf)
+# rf = [0] * 32
+# rf[8] = 0x20  # s0
+# rf[10] = 0x5  # a0
+# rf[11] = 0x2  # a1
+# rf[12] = 0xa  # a2
+# rf[13] = 0xf  # a3
 
-# Data memory initialization (d_mem array to all zero’s)
-d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
+# # Data memory initialization (d_mem array to all zero’s)
+# d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
 
 #=============================================== ======= ========================================================
 
 def Fetch(lines, total_lines):
-    global pc, branch_target
+    global pc, branch_target, alu_zero
     # Read instruction from program text file based on pc value
     pc += 4
     next_pc = pc
     # Update branch_target if needed
-    if branch_target != 0:
+    if alu_zero != 0:
         pc += branch_target
     else:
         pc = next_pc
@@ -69,10 +70,10 @@ def Decode(instruction):
 
     return opcode, rd, rs1, rs2, imm, funct3, funct7
 
-def Execute(ALUOp, rs1, rs2, imm):
+def Execute(alu_ctrl, rs1, rs2, imm):
     global alu_zero, branch_target, d_mem, rf
     # Perform ALU operation
-    alu_ctrl = 0
+    ALUOp = 0
 
     if rs1 != "NA":
         rs1_value = rf[rs1]
@@ -80,23 +81,23 @@ def Execute(ALUOp, rs1, rs2, imm):
         rs2_value = rf[rs2]
 
     # ALU operations
-    if ALUOp == 0:         # jal
+    if alu_ctrl == 0:         # jal
         pass
 
-    elif ALUOp == 0b0000:  # AND
-        alu_ctrl = rs1_value and rs2_value
+    elif alu_ctrl == 0b0000:  # AND
+        ALUOp = rs1_value and rs2_value
 
-    elif ALUOp == 0b0001:  # OR
-        alu_ctrl = rs1_value | rs2_value
+    elif alu_ctrl == 0b0001:  # OR
+        ALUOp = rs1_value | rs2_value
 
-    elif ALUOp == 0b0010:  # add
+    elif alu_ctrl == 0b0010:  # add
         if imm != "NA":
-            alu_ctrl = rs1_value + imm
+            ALUOp = rs1_value + imm
         else:
-            alu_ctrl = rs1_value + rs2_value
+            ALUOp = rs1_value + rs2_value
     
-    elif ALUOp == 0b0110:  # sub
-        alu_ctrl = rs1_value - rs2_value
+    elif alu_ctrl == 0b0110:  # sub
+        ALUOp = rs1_value - rs2_value
 
         if rs1_value == rs2_value:
             branch_target = imm  # Branch target address is the immediate value
@@ -104,10 +105,10 @@ def Execute(ALUOp, rs1, rs2, imm):
             branch_target = 0  # For other instructions, branch target address remains 0
 
     # Set zero flag if result is zero
-    if alu_ctrl == 0:
+    if ALUOp == 0:
         alu_zero = 1
     
-    return alu_ctrl, alu_zero, branch_target
+    return ALUOp, alu_zero, branch_target
 
 def Mem(mem_address, write_data, MemRead, MemWrite):
     if MemRead:
@@ -130,13 +131,13 @@ def Writeback():
 
 def ControlUnit(opcode, funct3, funct7):
     # Control signals
-    global RegWrite, Branch, ALUSrc, ALUOp, MemWrite, MemtoReg, MemRead, Jump
+    global RegWrite, Branch, ALUSrc, alu_ctrl, MemWrite, MemtoReg, MemRead, Jump
     RegWrite = 0
     MemRead = 0
     MemWrite = 0
     Branch = 0
     ALUSrc = 0
-    ALUOp = 0
+    alu_ctrl = 0
     Jump = 0
 
     '''
@@ -149,53 +150,53 @@ def ControlUnit(opcode, funct3, funct7):
     if opcode == 0b0100011:  # sw
         MemWrite = 1
         ALUSrc = 1
-        ALUOp = 0b0010  # add 
+        alu_ctrl = 0b0010  # add 
     
     elif opcode == 0b1100011:  # beq
         Branch = 1
-        ALUOp = 0b0110  # ALU: sub
+        alu_ctrl = 0b0110  # ALU: sub
     
     elif opcode == 0b0000011:  # lw
         MemRead = 1
         ALUSrc = 1
         RegWrite = 1
         MemtoReg = 1
-        ALUOp = 0b0010  # ALU: add
+        alu_ctrl = 0b0010  # ALU: add
 
     elif opcode == 0b0010011: # I-type
         RegWrite = 1
         ALUSrc = 1
         if funct3 == 0b000: # addi
-            ALUOp = 0b0010  # ALU: add
+            alu_ctrl = 0b0010  # ALU: add
         elif funct3 == 0b110: # ori
-            ALUOp = 0b0001  # ALU: OR
+            alu_ctrl = 0b0001  # ALU: OR
         elif funct3 == 0b111: # andi
-            ALUOp = 0b0000  # ALU: AND
+            alu_ctrl = 0b0000  # ALU: AND
 
     elif opcode == 0b1100111: # jalr
         RegWrite = 1
         ALUSrc = 1
         Jump = 1
-        ALUOp = 0b0010  # ALU: add
+        alu_ctrl = 0b0010  # ALU: add
     
     elif opcode == 0b0110011:  # R-type
         RegWrite = 1
         if funct7 == 0b0000000:
             if funct3 == 0b000:  # add
-                ALUOp = 0b0010  # ALU: add
+                alu_ctrl = 0b0010  # ALU: add
             elif funct3 == 0b110:  # or
-                ALUOp = 0b0001  # ALU: OR
+                alu_ctrl = 0b0001  # ALU: OR
             elif funct3 == 0b111:  # and
-                ALUOp = 0b0000  # ALU: AND
+                alu_ctrl = 0b0000  # ALU: AND
         elif funct7 == 0b0100000:
             if funct3 == 0b000:  # sub
-                ALUOp = 0b0110  # ALU: sub
+                alu_ctrl = 0b0110  # ALU: sub
     
     elif opcode == 0b1101111:  # jal
         RegWrite = 1
         Jump = 1
 
-    return RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp, Jump
+    return RegWrite, MemRead, MemWrite, Branch, ALUSrc, alu_ctrl, Jump
 
 # Dictionary containing the names for each register
 register_names = {
@@ -225,16 +226,18 @@ def main():
         for i in range(total_lines):
             # Fetch
             pc, current_line = Fetch(lines, total_lines)
+
+            # Decode
             opcode, rd, rs1, rs2, imm, funct3, funct7 = Decode(current_line)
             
             # Control Unit
-            RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp, Jump = ControlUnit(opcode, funct3, funct7)
+            RegWrite, MemRead, MemWrite, Branch, ALUSrc, alu_ctrl, Jump = ControlUnit(opcode, funct3, funct7)
 
             # Execute 
-            alu_ctrl, alu_zero, branch_target = Execute(ALUOp, rs1, rs2, imm)
+            ALUOp, alu_zero, branch_target = Execute(alu_ctrl, rs1, rs2, imm)
 
             # Mem
-            mem_address = alu_ctrl if ALUSrc == 1 else rs2  # Memory address for lw/sw      # also jalr?
+            mem_address = ALUOp if ALUSrc == 1 else rs2  # Memory address for lw/sw      # also jalr?
             write_data = rf[rs2] if rs2 != "NA" else rs2 # Data to write to memory for sw
             read_data = Mem(mem_address, write_data, MemRead, MemWrite)
 
@@ -245,7 +248,6 @@ def main():
                     # Update destination register with PC+4 value
                     rf[rd] = pc
                     # Jump to target address
-                    print("imm: ", imm)
                     pc = (pc - 4) + imm
                 
                 elif Jump == 1 and ALUSrc == 1:     #jalr
@@ -258,7 +260,7 @@ def main():
                 else:
                     # Other instructions
                     if rd != "NA":
-                        rf[rd] = read_data if MemRead == 1 else alu_ctrl
+                        rf[rd] = read_data if MemRead == 1 else ALUOp
 
             # Print results for part 2
             rd_name = register_names.get(rd, f"x{rd}")  # Default to "x{rd}" if rd not found in dictionary
@@ -275,16 +277,16 @@ def main():
             elif MemRead:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
                 
-                #print(f"x{rd} is modified to 0x{read_data:x}")         # for part_1
-                print(f"{rd_name} is modified to 0x{read_data:x}")      # for part_2
+                print(f"x{rd} is modified to 0x{read_data:x}")         # for part_1
+                #print(f"{rd_name} is modified to 0x{read_data:x}")      # for part_2
                 
                 print(f"pc is modified to 0x{pc:x}")
 
             elif RegWrite or Jump:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
 
-                #print(f"x{rd} is modified to 0x{rf[rd]:x}")            # for part_1
-                print(f"{rd_name} is modified to 0x{rf[rd]:x}")         # for part_2
+                print(f"x{rd} is modified to 0x{rf[rd]:x}")            # for part_1
+                #print(f"{rd_name} is modified to 0x{rf[rd]:x}")         # for part_2
 
                 print(f"pc is modified to 0x{pc:x}")
             
@@ -296,8 +298,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# TODO: When part 2 is finished, add registers for pipeline
 
 # sample_part2.txt
 """

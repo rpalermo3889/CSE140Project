@@ -16,13 +16,13 @@ MemRead = 0
 Jump = 0
 
 #=============================================== Part_1 ========================================================
-# # Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
+# Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
 # rf = [0] * 32
 # rf[1] = 0x20
 # rf[2] = 0x5
 # rf[10] = 0x70
 # rf[11] = 0x4
-
+#
 # # Data memory initialization (0x70 = 0x5, 0x74 = 0x10)
 # d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
 # d_mem[0x70] = 0x5
@@ -30,7 +30,7 @@ Jump = 0
 
 #=============================================== Part_2 ========================================================
 
-# # Register file initialization (s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf)
+# Register file initialization (s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf)
 rf = [0] * 32
 rf[8] = 0x20  # s0
 rf[10] = 0x5  # a0
@@ -38,7 +38,7 @@ rf[11] = 0x2  # a1
 rf[12] = 0xa  # a2
 rf[13] = 0xf  # a3
 
-# # Data memory initialization (d_mem array to all zero’s)
+# Data memory initialization (d_mem array to all zero’s)
 d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
 
 #=============================================== ======= ========================================================
@@ -46,7 +46,6 @@ d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
 def Fetch(lines, total_lines):
     global pc, branch_target
     # Read instruction from program text file based on pc value
-    # Increment pc by 4
     pc += 4
     next_pc = pc
     # Update branch_target if needed
@@ -55,16 +54,14 @@ def Fetch(lines, total_lines):
     else:
         pc = next_pc
     
+    # Calculate which instruction line
+    # PC is divided by 4, since each increment of 4 depicts a new instruction
+    # Getting the modulus of it with the total number of lines allows it to wrap around the count
+    # Minus 1 is to account that the first instruction is in the 0th element.
     line_number = int((pc/4) % total_lines) - 1
-    print("pc: ", pc)
-    print("line_num: ", line_number)
     current_line = lines[line_number]
-    print("current_line: ", current_line)
 
     return pc, current_line
-# TODO: have "line" be affected like how pc is affected
-
-# TODO: add a logic for pc to "jump" (jal & jalr)
 
 def Decode(instruction):
     # Extract opcode and operands from instruction
@@ -83,7 +80,7 @@ def Execute(ALUOp, rs1, rs2, imm):
         rs2_value = rf[rs2]
 
     # ALU operations
-    if ALUOp == 0:         # jal & jalr
+    if ALUOp == 0:         # jal
         pass
 
     elif ALUOp == 0b0000:  # AND
@@ -113,8 +110,6 @@ def Execute(ALUOp, rs1, rs2, imm):
     return alu_ctrl, alu_zero, branch_target
 
 def Mem(mem_address, write_data, MemRead, MemWrite):
-    # mem_address %= 64  # Ensure memory address wraps around if it exceeds array size
-
     if MemRead:
         read_data = d_mem[mem_address]
     else:
@@ -125,11 +120,29 @@ def Mem(mem_address, write_data, MemRead, MemWrite):
 
     return read_data
 
-def Writeback():
-    global total_clock_cycles
-    
+def Writeback(rd, rs1, imm, read_data, alu_ctrl):
+    global total_clock_cycles, pc
     # Increment total clock cycles
     total_clock_cycles += 1
+
+    if RegWrite == 1:
+        if Jump == 1 and ALUSrc == 0:       # jal
+            # Update destination register with PC+4 value
+            rf[rd] = pc
+            # Jump to target address
+            pc = (pc - 4) + imm
+                
+        elif Jump == 1 and ALUSrc == 1:     #jalr
+            # Update destination register with PC+4 value
+            curr_pc = pc
+            # Jump to target address
+            pc = rf[rs1] + imm
+            rf[rd] = curr_pc
+
+        else:
+            # Other instructions
+            if rd != "NA":
+                rf[rd] = read_data if MemRead == 1 else alu_ctrl
 
     return total_clock_cycles
 
@@ -176,10 +189,11 @@ def ControlUnit(opcode, funct3, funct7):
             ALUOp = 0b0001  # ALU: OR
         elif funct3 == 0b111: # andi
             ALUOp = 0b0000  # ALU: AND
-    
+
     elif opcode == 0b1100111: # jalr
         RegWrite = 1
         ALUSrc = 1
+        Jump = 1
         ALUOp = 0b0010  # ALU: add
     
     elif opcode == 0b0110011:  # R-type
@@ -201,6 +215,7 @@ def ControlUnit(opcode, funct3, funct7):
 
     return RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp, Jump
 
+# Dictionary containing the names for each register
 register_names = {
     0: "zero", 1: "ra", 2: "s0", 3: "gp", 4: "tp",
     5: "t0", 6: "t1", 7: "t2",
@@ -217,7 +232,6 @@ register_names = {
 def main():
     global pc, branch_target, alu_zero, total_clock_cycles
 
-    # Ask the user for the filename
     filename = input("Enter the program file name to run:\n")
 
     # Open and read the input program text file
@@ -226,11 +240,11 @@ def main():
         total_lines = len(lines)
 
         # Fetch, Decode, Execute, Mem, and Writeback for each instruction
-        i = 0
-        while i < total_lines:
-            i += 1
+        for i in range(total_lines):
             # Fetch
             pc, current_line = Fetch(lines, total_lines)
+
+            # Decode
             opcode, rd, rs1, rs2, imm, funct3, funct7 = Decode(current_line)
             
             # Control Unit
@@ -240,34 +254,17 @@ def main():
             alu_ctrl, alu_zero, branch_target = Execute(ALUOp, rs1, rs2, imm)
 
             # Mem
-            mem_address = alu_ctrl if ALUSrc == 1 else rs2  # Memory address for lw/sw
+            mem_address = alu_ctrl if ALUSrc == 1 else rs2  # Memory address for lw/sw      # also jalr?
             write_data = rf[rs2] if rs2 != "NA" else rs2 # Data to write to memory for sw
             read_data = Mem(mem_address, write_data, MemRead, MemWrite)
 
             # Writeback
-            total_clock_cycles = Writeback()
-            if RegWrite == 1:
-                if Jump == 1:
-                    # Update destination register with PC+4 value
-                    rf[rd] = pc
-                    # Jump to target address
-                    print("imm: ", imm)
-                    pc = (pc - 4) + imm
-                else:
-                    # Other instructions
-                    if rd != "NA":
-                        rf[rd] = read_data if MemRead == 1 else alu_ctrl
+            total_clock_cycles, rd = Writeback(rd, rs1, imm, read_data, alu_ctrl)
 
-            # TODO: fix output to use correct register and changes
-            # Print results
+            # Print results for part 2
             rd_name = register_names.get(rd, f"x{rd}")  # Default to "x{rd}" if rd not found in dictionary
 
-            if Jump:
-                print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-                print(f"{rd_name} is modified to 0x{rf[rd]:x}")
-                print(f"pc is modified to 0x{pc:x}")
-
-            elif Branch:
+            if Branch:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
                 print(f"pc is modified to 0x{pc:x}")
             
@@ -284,7 +281,7 @@ def main():
                 
                 print(f"pc is modified to 0x{pc:x}")
 
-            elif RegWrite:
+            elif RegWrite or Jump:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
 
                 #print(f"x{rd} is modified to 0x{rf[rd]:x}")            # for part_1
@@ -300,6 +297,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# TODO: When part 2 is finished, add registers for pipeline
 
 # sample_part2.txt
 """

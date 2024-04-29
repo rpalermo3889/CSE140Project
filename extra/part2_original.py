@@ -16,13 +16,13 @@ MemRead = 0
 Jump = 0
 
 #=============================================== Part_1 ========================================================
-# # Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
+# Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
 # rf = [0] * 32
 # rf[1] = 0x20
 # rf[2] = 0x5
 # rf[10] = 0x70
 # rf[11] = 0x4
-
+#
 # # Data memory initialization (0x70 = 0x5, 0x74 = 0x10)
 # d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
 # d_mem[0x70] = 0x5
@@ -30,7 +30,7 @@ Jump = 0
 
 #=============================================== Part_2 ========================================================
 
-# # Register file initialization (s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf)
+# Register file initialization (s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf)
 rf = [0] * 32
 rf[8] = 0x20  # s0
 rf[10] = 0x5  # a0
@@ -38,15 +38,14 @@ rf[11] = 0x2  # a1
 rf[12] = 0xa  # a2
 rf[13] = 0xf  # a3
 
-# # Data memory initialization (d_mem array to all zero’s)
+# Data memory initialization (d_mem array to all zero’s)
 d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
 
 #=============================================== ======= ========================================================
 
-def Fetch():
+def Fetch(lines, total_lines):
     global pc, branch_target
     # Read instruction from program text file based on pc value
-    # Increment pc by 4
     pc += 4
     next_pc = pc
     # Update branch_target if needed
@@ -54,9 +53,15 @@ def Fetch():
         pc += branch_target
     else:
         pc = next_pc
-    return pc
+    
+    # Calculate which instruction line
+    # PC is divided by 4, since each increment of 4 depicts a new instruction
+    # Getting the modulus of it with the total number of lines allows it to wrap around the count
+    # Minus 1 is to account that the first instruction is in the 0th element.
+    line_number = int((pc/4) % total_lines) - 1
+    current_line = lines[line_number]
 
-# TODO: add a logic for pc to "jump" (jal & jalr)
+    return pc, current_line
 
 def Decode(instruction):
     # Extract opcode and operands from instruction
@@ -71,13 +76,11 @@ def Execute(ALUOp, rs1, rs2, imm):
 
     if rs1 != "NA":
         rs1_value = rf[rs1]
-        #print("rs1_value: ", rs1_value)     #===============================================Print Statement========================================================
     if rs2 != "NA":
         rs2_value = rf[rs2]
-        #print("rs2_value: ", rs2_value)     #===============================================Print Statement========================================================
 
     # ALU operations
-    if ALUOp == 0:         # jal & jalr
+    if ALUOp == 0:         # jal
         pass
 
     elif ALUOp == 0b0000:  # AND
@@ -100,8 +103,6 @@ def Execute(ALUOp, rs1, rs2, imm):
         else:
             branch_target = 0  # For other instructions, branch target address remains 0
 
-    #print("alu_ctrl: ", alu_ctrl)       #===============================================Print Statement========================================================
-
     # Set zero flag if result is zero
     if alu_ctrl == 0:
         alu_zero = 1
@@ -109,8 +110,6 @@ def Execute(ALUOp, rs1, rs2, imm):
     return alu_ctrl, alu_zero, branch_target
 
 def Mem(mem_address, write_data, MemRead, MemWrite):
-    # mem_address %= 64  # Ensure memory address wraps around if it exceeds array size
-
     if MemRead:
         read_data = d_mem[mem_address]
     else:
@@ -172,10 +171,11 @@ def ControlUnit(opcode, funct3, funct7):
             ALUOp = 0b0001  # ALU: OR
         elif funct3 == 0b111: # andi
             ALUOp = 0b0000  # ALU: AND
-    
+
     elif opcode == 0b1100111: # jalr
         RegWrite = 1
         ALUSrc = 1
+        Jump = 1
         ALUOp = 0b0010  # ALU: add
     
     elif opcode == 0b0110011:  # R-type
@@ -197,6 +197,7 @@ def ControlUnit(opcode, funct3, funct7):
 
     return RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp, Jump
 
+# Dictionary containing the names for each register
 register_names = {
     0: "zero", 1: "ra", 2: "s0", 3: "gp", 4: "tp",
     5: "t0", 6: "t1", 7: "t2",
@@ -211,18 +212,22 @@ register_names = {
 
 # Main function
 def main():
-    global pc, branch_target, alu_zero
+    global pc, branch_target, alu_zero, total_clock_cycles
 
-    # Ask the user for the filename
     filename = input("Enter the program file name to run:\n")
 
     # Open and read the input program text file
-    with open(filename, "r") as file:
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+        total_lines = len(lines)
+
         # Fetch, Decode, Execute, Mem, and Writeback for each instruction
-        for line in file:
+        for i in range(total_lines):
             # Fetch
-            pc = Fetch()
-            opcode, rd, rs1, rs2, imm, funct3, funct7 = Decode(line)
+            pc, current_line = Fetch(lines, total_lines)
+
+            # Decode
+            opcode, rd, rs1, rs2, imm, funct3, funct7 = Decode(current_line)
             
             # Control Unit
             RegWrite, MemRead, MemWrite, Branch, ALUSrc, ALUOp, Jump = ControlUnit(opcode, funct3, funct7)
@@ -231,34 +236,35 @@ def main():
             alu_ctrl, alu_zero, branch_target = Execute(ALUOp, rs1, rs2, imm)
 
             # Mem
-            mem_address = alu_ctrl if ALUSrc == 1 else rs2  # Memory address for lw/sw
+            mem_address = alu_ctrl if ALUSrc == 1 else rs2  # Memory address for lw/sw      # also jalr?
             write_data = rf[rs2] if rs2 != "NA" else rs2 # Data to write to memory for sw
             read_data = Mem(mem_address, write_data, MemRead, MemWrite)
 
             # Writeback
             total_clock_cycles = Writeback()
             if RegWrite == 1:
-                if Jump == 1:
+                if Jump == 1 and ALUSrc == 0:       # jal
                     # Update destination register with PC+4 value
                     rf[rd] = pc
                     # Jump to target address
-                    pc = imm
+                    pc = (pc - 4) + imm
+                
+                elif Jump == 1 and ALUSrc == 1:     #jalr
+                    # Update destination register with PC+4 value
+                    curr_pc = pc
+                    # Jump to target address
+                    pc = rf[rs1] + imm
+                    rf[rd] = curr_pc
+
                 else:
                     # Other instructions
                     if rd != "NA":
                         rf[rd] = read_data if MemRead == 1 else alu_ctrl
-            #print("rf: ", rf)           #===============================================Print Statement========================================================
 
-            # TODO: fix output to use correct register and changes
-            # Print results
+            # Print results for part 2
             rd_name = register_names.get(rd, f"x{rd}")  # Default to "x{rd}" if rd not found in dictionary
 
-            if Jump:
-                print(f"\ntotal_clock_cycles {total_clock_cycles} :")
-                print(f"{rd_name} is modified to 0x{rf[rd]:x}")
-                print(f"pc is modified to 0x{pc:x}")
-
-            elif Branch:
+            if Branch:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
                 print(f"pc is modified to 0x{pc:x}")
             
@@ -275,7 +281,7 @@ def main():
                 
                 print(f"pc is modified to 0x{pc:x}")
 
-            elif RegWrite:
+            elif RegWrite or Jump:
                 print(f"\ntotal_clock_cycles {total_clock_cycles} :")
 
                 #print(f"x{rd} is modified to 0x{rf[rd]:x}")            # for part_1
@@ -302,139 +308,49 @@ if __name__ == "__main__":
 00000001111001000010000000100011
 
 Translations:
-jal x1, 8           {rd: x1}                        (output: ra {x1} is modified to 0x4)          
-jal x1, 16          {rd: x1}                        (output: a0 {x10} is modified to 0xc {12})      
+1.) jal x1, 8           {rd: x1}                        (output: ra {x1} is modified to 0x4)          
+5.) jal x1, 16          {rd: x1}                        (output: ra {x1} is modified to 0x14 {20})      
 
-add x10, x11, x12   {rd: x10, rs1: x11, rs2: x12}   (output: t5 {x30} is modified to 0x3)
-sub x30, x13, x10   {rd: x30, rs1: x13, rs2: x10}   (output: ra {x1} is modified to 0x14 {20})
+2.) add x10, x11, x12   {rd: x10, rs1: x11, rs2: x12}   (output: a0 {x10} is modified to 0xc {12})
+3.) sub x30, x13, x10   {rd: x30, rs1: x13, rs2: x10}   (output: t5 {x30} is modified to 0x3)
 
-jalr x1, 0(x1)      {rd: x1, rs1: x1}               (output: ra {x1} is modified to 0x8)
+4.) jalr x1, 0(x1)      {rd: x1, rs1: x1}               (output: ra {x1} is modified to 0x8)
 
-sw x30, 0(x8)       {rs1: x8, rs2: x30}             (output: memory 0x20 {32} is modified to 0x3)
+6.) sw x30, 0(x8)       {rs1: x8, rs2: x30}             (output: memory 0x20 {32} is modified to 0x3)
 
-#==============================================================
-Correct Output:
+#====================== Correct Output =============================
 
-Enter the program file name to run:
-sample_part2.txt
-
+ Operation: jal (jumps to add, 3rd instruction)
 total_clock_cycles 1 :
-ra is modified to 0x4
-pc is modified to 0x8
+ra is modified to 0x4   {4}
+pc is modified to 0x8   {8}
 
+ Operation: add
 total_clock_cycles 2 :
 a0 is modified to 0xc   {12}
 pc is modified to 0xc   {12}
 
+ Operation: sub
 total_clock_cycles 3 :
-t5 is modified to 0x3
+t5 is modified to 0x3   {3}
 pc is modified to 0x10  {16}
 
+ Operation: jalr
 total_clock_cycles 4 :
 ra is modified to 0x14  {20}
-pc is modified to 0x4
+pc is modified to 0x4   {4}
 
+ Operation: jal
 total_clock_cycles 5 :
-ra is modified to 0x8
+ra is modified to 0x8   {8}
 pc is modified to 0x14  {20}
-
-total_clock_cycles 6 :
-memory 0x20 is modified to 0x3
-pc is modified to 0x18
-
-program terminated:
-total execution time is 6 cycles
-#==============================================================
-Current Output:
-Enter the program file name to run:
-sample_part2.txt 
-
- Operation: jal       
-total_clock_cycles 1 :
-ra is modified to 0x4 
-pc is modified to 0x8 
-
- Operation: jal       
-total_clock_cycles 2 :
-ra is modified to 0xc                   # a0 is modified to 0xc 
-pc is modified to 0x10                  # pc is modified to 0xc
-
- Operation: add       
-total_clock_cycles 3 :
-a0 is modified to 0xc                   # t5 is modified to 0x3 
-pc is modified to 0x14                  # pc is modified to 0x10
-
- Operation: sub       
-total_clock_cycles 4 :
-t5 is modified to 0x3                   # ra is modified to 0x14
-pc is modified to 0x18                  # pc is modified to 0x4
-
- Operation: jalr
-total_clock_cycles 5 :
-ra is modified to 0xc                  # ra is modified to 0x8
-pc is modified to 0x1c                 # pc is modified to 0x14
 
  Operation: sw
 total_clock_cycles 6 :
 memory 0x20 is modified to 0x3
-pc is modified to 0x20                   # pc is modified to 0x18
+pc is modified to 0x18  {24}
 
 program terminated:
 total execution time is 6 cycles
-"""
-
-
-
-
-
-# sample_part1.txt
-"""
-00000000010001010010000110000011
-01000000001000001000001010110011
-00000000001100101000011001100011
-00000000001100101000001010110011
-00000000010101011110001010110011
-00000000010101010010000000100011
-
-Translations:
-lw x3, 4(x10)       {rd: x3, rs1: x10}          (output: x3 is modified to 0x10 {16})
-sub x5, x1, x2      {rd: x5, rs1: 1, rs2: 2}    (output: x5 is modified to 0x1b {27})
-beq x5, x3, 12      {rs1: x5, rs2: 3}
-
-add x5, x5, x3      {rd: x5, rs1: 5, rs2: 3}    (output: x5 is modified to 0x2b {43})
-
-or x5, x11, x5      {rd: x5, rs1: 11, rs2: x5}  (output: x5 is modified to 0x2f {47})
-
-sw x5, 0(x10)       {rs1: x10, rs2: x5}         (output: memory 0x70 is modified to 0x2f {memory 112 is modified to 47})
-
-
-Current Output:
-Enter the program file name to run:
-sample_part1.txt
-
-total_clock_cycles 1 :
-x3 is modified to 0x10
-pc is modified to 0x4 
-
-total_clock_cycles 2 :
-x5 is modified to 0x1b
-pc is modified to 0x8 
-
-total_clock_cycles 3 :
-pc is modified to 0xc 
-
-total_clock_cycles 4 :
-x5 is modified to 0x2b
-pc is modified to 0x10
-
-total_clock_cycles 5 :
-x5 is modified to 0x2f
-pc is modified to 0x14
-
-total_clock_cycles 6 :
-memory 0x70 is modified to 0x2f
-pc is modified to 0x18
-
-program terminated:
-total execution time is 6 cycles
+#==============================================================
 """
