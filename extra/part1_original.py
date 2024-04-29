@@ -319,6 +319,11 @@ or x5, x11, x5      {rd: x5, rs1: 11, rs2: x5}  (output: x5 is modified to 0x2f 
 
 sw x5, 0(x10)       {rs1: x10, rs2: x5}         (output: memory 0x70 is modified to 0x2f {memory 112 is modified to 47})
 
+sw - yes
+lw - yes
+jalr - yes
+addi - yes
+add - no
 
 #====================== Correct Output =============================
 Enter the program file name to run:
