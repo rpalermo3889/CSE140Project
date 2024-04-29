@@ -110,7 +110,11 @@ def Execute(alu_ctrl, rs1, rs2, imm, MemtoReg):
     
     return ALUOp, alu_zero, branch_target
 
-def Mem(mem_address, write_data, MemRead, MemWrite):
+def Mem(MemRead, MemWrite, rs2):
+    global rf, ALUSrc, ALUOp
+    mem_address = ALUOp if ALUSrc == 1 else rs2  # Memory address for lw/sw      # also jalr?
+    write_data = rf[rs2] if rs2 != "NA" else rs2 # Data to write to memory for sw
+
     if MemRead:
         read_data = d_mem[mem_address]
     else:
@@ -119,7 +123,7 @@ def Mem(mem_address, write_data, MemRead, MemWrite):
     if MemWrite:
         d_mem[mem_address] = write_data
 
-    return read_data
+    return mem_address, write_data, read_data
 
 def Writeback(rd, rs1, imm, read_data):
     global total_clock_cycles, pc, rf, MemRead, Jump, ALUSrc, ALUOp, RegWrite
@@ -260,13 +264,12 @@ def main():
             ALUOp, alu_zero, branch_target = Execute(alu_ctrl, rs1, rs2, imm, MemtoReg)
 
             # Mem
-            mem_address = ALUOp if ALUSrc == 1 else rs2  # Memory address for lw/sw      # also jalr?
-            write_data = rf[rs2] if rs2 != "NA" else rs2 # Data to write to memory for sw
-            read_data = Mem(mem_address, write_data, MemRead, MemWrite)
+            mem_address, write_data, read_data = Mem(MemRead, MemWrite, rs2)
 
             # Writeback
             total_clock_cycles = Writeback(rd, rs1, imm, read_data)
 
+            #===========================================Outputs==========================================================
             # Print results for part 2
             rd_name = register_names.get(rd, f"x{rd}")  # Default to "x{rd}" if rd not found in dictionary
 
