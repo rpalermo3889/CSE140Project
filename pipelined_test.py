@@ -2,9 +2,9 @@ import decoder
 
 class PipelineRegister:
     def __init__(self):
-        self.instruction = None
+        self.instruction = 0
         # Add member variables for individual stage's output signals
-        # Decode outputs
+        # Decoded instruction
         self.opcode = 0
         self.rd = 0
         self.rs1 = 0
@@ -22,7 +22,7 @@ class PipelineRegister:
         self.MemRead = 0
         self.Jump = 0
 
-        # Additional varibales
+        # Additional variables
         self.pc = 0
         self.alu_zero = 0
         self.branch_target = 0
@@ -53,6 +53,11 @@ d_mem[0x70] = 0x5
 d_mem[0x74] = 0x10
 
 def Fetch(lines, total_lines):
+    # Inputs
+    branch_target = if_id.branch_target
+    alu_zero = if_id.alu_zero
+    pc = if_id.pc
+
     # Read instruction from program text file based on pc value
     pc += 4
     next_pc = pc
@@ -67,16 +72,24 @@ def Fetch(lines, total_lines):
     # Getting the modulus of it with the total number of lines allows it to wrap around the count
     # Minus 1 is to account that the first instruction is in the 0th element.
     line_number = int((pc/4) % total_lines) - 1
-    current_line = lines[line_number]
+    instruction = lines[line_number]
     
     # Output to Decode
-    if_id.pc, if_id.branch_target, if_id.alu_zero
+    if_id.pc = pc
+    if_id.instruction = instruction
 
-    return pc, current_line
+    return pc, instruction
 
 def Decode(instruction):
     # Input from Fetch
-    instruction = if_id.pc
+    instruction = if_id.instruction
+    # opcode = if_id.opcode
+    # rd = if_id.rd
+    # rs1 = if_id.rs1
+    # rs2 = if_id.rs2
+    # imm = if_id.imm
+    # funct3 = if_id.funct3
+    # funct7 = if_id.funct7
 
     # Extract opcode and operands from instruction
     opcode, rd, rs1, rs2, imm, funct3, funct7 = decoder.decoder(instruction)
@@ -99,6 +112,8 @@ def Execute(alu_ctrl, rs1, rs2, imm, MemtoReg):
     rs1 = id_ex.rs1
     rs2 = id_ex.rs2
     imm = id_ex.imm
+    alu_zero = id_ex.alu_zero
+    branch_target = id_ex.branch_target
     
     #global alu_zero, branch_target, d_mem, rf
     # Perform ALU operation
@@ -171,14 +186,12 @@ def Mem(MemRead, MemWrite, rs2):
 
 def Writeback(rd, rs1, imm, read_data):
     # global total_clock_cycles, pc, rf, MemRead, Jump, ALUSrc, ALUOp, RegWrite
-    global rf
+    global rf, total_clock_cycles
     
     rd = mem_wb.rd
     rs1 = mem_wb.rs1
     imm = mem_wb.imm
-    # total_clock_cycles ???
     pc = mem_wb.pc
-    # rf ????
     MemRead = mem_wb.MemRead
     Jump = mem_wb.Jump
     ALUSrc = mem_wb.ALUSrc
@@ -309,7 +322,12 @@ register_names = {
 def main():
     global pc, branch_target, alu_zero, total_clock_cycles, rf, MemRead, Jump, ALUSrc, ALUOp, RegWrite
 
-    filename = input("Enter the program file name to run:\n")
+    # User input for file name.
+    #filename = input("Enter the program file name to run:\n")
+
+    # Part1
+    print("Enter the program file name to run:\n")
+    filename = "sample_part1.txt"
 
     # Open and read the input program text file
     with open(filename, 'r') as file:
@@ -319,10 +337,10 @@ def main():
         # Fetch, Decode, Execute, Mem, and Writeback for each instruction
         for i in range(total_lines):
             # Fetch
-            pc, current_line = Fetch(lines, total_lines)
+            pc, instruction = Fetch(lines, total_lines)
 
             # Decode
-            opcode, rd, rs1, rs2, imm, funct3, funct7 = Decode(current_line)
+            opcode, rd, rs1, rs2, imm, funct3, funct7 = Decode(instruction)
             
             # Control Unit
             RegWrite, MemRead, MemWrite, Branch, ALUSrc, alu_ctrl, Jump, MemtoReg = ControlUnit(opcode, funct3, funct7)
@@ -331,12 +349,9 @@ def main():
             ALUOp, alu_zero, branch_target = Execute(alu_ctrl, rs1, rs2, imm, MemtoReg)
 
             # Mem
-            mem_address = ALUOp if ALUSrc == 1 else rs2  # Memory address for lw/sw      # also jalr?
-            write_data = rf[rs2] if rs2 != "NA" else rs2 # Data to write to memory for sw
-
-            # Mem
             mem_address, write_data, read_data = Mem(MemRead, MemWrite, rs2)
-
+            print("read_data: ", read_data)
+            
             # Writeback
             total_clock_cycles = Writeback(rd, rs1, imm, read_data)
 
