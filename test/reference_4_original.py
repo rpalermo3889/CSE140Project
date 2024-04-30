@@ -34,15 +34,6 @@ MemtoReg = 0
 MemRead = 0
 Jump = 0
 
-#=============================================== Test_Case =====================================================
-
-# # Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
-# rf = [0] * 32
-# rf[3] = 0x8
-
-# # Data memory initialization (0x70 = 0x5, 0x74 = 0x10)
-# d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
-
 #=============================================== Part_1 ========================================================
 
 # Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
@@ -56,19 +47,6 @@ rf[11] = 0x4
 d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
 d_mem[0x70] = 0x5
 d_mem[0x74] = 0x10
-
-#=============================================== Part_2 ========================================================
-
-# # Register file initialization (s0 = 0x20, a0 = 0x5, a1 = 0x2, a2 = 0xa, a3 = 0xf)
-# rf = [0] * 32
-# rf[8] = 0x20  # s0
-# rf[10] = 0x5  # a0
-# rf[11] = 0x2  # a1
-# rf[12] = 0xa  # a2
-# rf[13] = 0xf  # a3
-
-# # Data memory initialization (d_mem array to all zero’s)
-# d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
 
 #================================================================================================================
 
@@ -326,85 +304,13 @@ def main():
 if __name__ == "__main__":
     main()
 
-# test_case.txt
+
+# sample_part1.txt
 """
-Test: addi, andi, ori, and, beq
-
-# Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
-rf = [0] * 32
-rf[3] = 0x8
-
-# Data memory initialization (0x70 = 0x5, 0x74 = 0x10)
-d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
-
-
-addi x2, x3, 4      # x2 = 12
-beq x2, x2, 12       # pc = 16
--andi x4, x3, 8      # x4 = 8
--ori x5, x1, 4       # x5 = 4
-and x6, x2, x4      # x6 = 8
-
-00000000010000011000000100010011
-00000000001000010000011001100011
-00000000100000011111001000010011
-00000000010000001110001010010011
-00000000010000010111001100110011
-
-"""
-
-# sample_part2.txt
-"""
-00000000100000000000000011101111
-00000001000000000000000011101111
-00000000110001011000010100110011
-01000000101001101000111100110011
-00000000000000001000000011100111
-00000001111001000010000000100011
-
-Translations:
-1.) jal x1, 8           {rd: x1}                        (output: ra {x1} is modified to 0x4)          
-5.) jal x1, 16          {rd: x1}                        (output: ra {x1} is modified to 0x14 {20})      
-
-2.) add x10, x11, x12   {rd: x10, rs1: x11, rs2: x12}   (output: a0 {x10} is modified to 0xc {12})
-3.) sub x30, x13, x10   {rd: x30, rs1: x13, rs2: x10}   (output: t5 {x30} is modified to 0x3)
-
-4.) jalr x1, 0(x1)      {rd: x1, rs1: x1}               (output: ra {x1} is modified to 0x8)
-
-6.) sw x30, 0(x8)       {rs1: x8, rs2: x30}             (output: memory 0x20 {32} is modified to 0x3)
-
-#====================== Correct Output =============================
-
- Operation: jal (jumps to add, 3rd instruction)
-total_clock_cycles 1 :
-ra is modified to 0x4   {4}
-pc is modified to 0x8   {8}
-
- Operation: add
-total_clock_cycles 2 :
-a0 is modified to 0xc   {12}
-pc is modified to 0xc   {12}
-
- Operation: sub
-total_clock_cycles 3 :
-t5 is modified to 0x3   {3}
-pc is modified to 0x10  {16}
-
- Operation: jalr
-total_clock_cycles 4 :
-ra is modified to 0x14  {20}
-pc is modified to 0x4   {4}
-
- Operation: jal
-total_clock_cycles 5 :
-ra is modified to 0x8   {8}
-pc is modified to 0x14  {20}
-
- Operation: sw
-total_clock_cycles 6 :
-memory 0x20 is modified to 0x3
-pc is modified to 0x18  {24}
-
-program terminated:
-total execution time is 6 cycles
-#==============================================================
+00000000010001010010000110000011
+01000000001000001000001010110011
+00000000001100101000011001100011
+00000000001100101000001010110011
+00000000010101011110001010110011
+00000000010101010010000000100011
 """
