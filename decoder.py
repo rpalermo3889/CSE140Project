@@ -70,7 +70,7 @@ def decode_R(instr, opcode):
     # print(f"Rd: x{rd}")
     # print(f"Funct3: {funct3}")
     # print(f"Funct7: {funct7}")
-    # opcode, rd, rs1, rs2, imm, funct3, funct7
+         # opcode, rd, rs1, rs2, imm, funct3, funct7
     return opcode, rd, rs1, rs2, "NA", funct3, funct7
 
 # Function to decode I-type instruction
@@ -136,8 +136,8 @@ def decode_I(instr):
     # if imm < 0 or imm > 9:
     #     print(f" (or 0x{imm & 0x5F:X})", end="")
     # print()
-    # opcode, rd, rs1, rs2, imm, funct3, funct7
-    return opcode, rd, rs1, "NA", imm, "NA", "NA"
+         # opcode, rd, rs1, rs2, imm, funct3, funct7
+    return opcode, rd, rs1, "NA", imm, funct3, "NA"
 
 # Function to decode S-type instruction
 # Robert Palermo
