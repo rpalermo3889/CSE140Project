@@ -235,6 +235,12 @@ def main():
         Execute()
         Mem()
         Writeback()
+        # # ================== UNCOMMENT BELOW TO RUN WHOLE PROGRAM ===================
+        # i=1
+        # while i < len(lines):
+        #     Writeback()
+        #     i+=1
+        # # ============================================================================
 
     print("\nProgram terminated:")
     print(f"Total execution time is {total_clock_cycles} cycles")
