@@ -1,5 +1,40 @@
 import decoder
 
+# # Global variables
+# pc = 0
+# branch_target = 0
+# alu_zero = 0
+# total_clock_cycles = 0
+# alu_ctrl = 0
+# ALUOp = 0
+
+# # Instruction lines variables
+# lines = 0
+# instruction = 0
+
+# # Memory fields
+# mem_address = 0
+# write_data = 0
+# read_data = 0
+
+# # Decode fields
+# opcode = 0
+# rd = 0
+# rs1 = 0
+# rs2 = 0
+# imm = 0
+# funct3 = 0
+# funct7 = 0
+
+# # Control signals
+# RegWrite = 0
+# Branch = 0
+# ALUSrc = 0
+# MemWrite = 0
+# MemtoReg = 0
+# MemRead = 0
+# Jump = 0
+
 class if_id_register:
     def __init__(self):
         self.instruction = 0
@@ -59,17 +94,19 @@ def Fetch():
     # Read instruction from program text file based on pc value
     next_pc = pc + 4
     pc = next_pc
-    if_id.pc = pc
+    if_id.pc = pc   # output
     
     line_number = int(pc/4) - 1
-    if_id.instruction = lines[line_number]
+    if_id.instruction = lines[line_number]  # output
+
     total_clock_cycles += 1
 
 def Decode():
-    global if_id, id_ex, opcode, rd, rs1, rs2, imm, funct3, funct7
+    global if_id, id_ex, total_clock_cycles
+    global instruction, opcode, rd, rs1, rs2, imm, funct3, funct7
     # Extract opcode and operands from instruction in if_id
     instruction = if_id.instruction
-    opcode, rd, rs1, rs2, imm, funct3, funct7 = decoder.decoder(instruction)
+    opcode, rd, rs1, rs2, imm, funct3, funct7 = decoder.decoder(instruction)    #output
 
     # Buffer control signals in id_ex
     id_ex.opcode = opcode
@@ -86,7 +123,58 @@ def Execute():
     global id_ex, ex_mem, total_clock_cycles
     # Perform ALU operation based on control signals and operands in id_ex
     # Buffer results in ex_mem
-    ex_mem.ALU_result = id_ex.rs1 + id_ex.imm
+    global alu_ctrl, alu_zero, branch_target, rf, pc
+    global ALUOp, MemtoReg
+    global rs1, rs2, imm
+    
+
+    # Perform ALU operation
+    ALUOp = 0
+    alu_zero = 0
+
+    if rs1 != "NA":
+        rs1_value = rf[rs1]
+    if rs2 != "NA":
+        rs2_value = rf[rs2]
+
+    # ALU operations
+    if alu_ctrl == "NA":      # jal
+        pass
+
+    elif alu_ctrl == 0b0000:  # AND
+        if MemtoReg == 1:
+            ALUOp = rs1_value & imm
+        else:
+            ALUOp = rs1_value & rs2_value
+
+    elif alu_ctrl == 0b0001:  # OR
+        if MemtoReg == 1:
+            ALUOp = rs1_value | imm
+        else:
+            ALUOp = rs1_value | rs2_value
+
+    elif alu_ctrl == 0b0010:  # add
+        if MemtoReg == 1:
+            ALUOp = rs1_value + imm
+        else:
+            ALUOp = rs1_value + rs2_value
+    
+    elif alu_ctrl == 0b0110:  # sub
+        if MemtoReg == 1:
+            ALUOp = rs1_value - imm
+        else:
+            ALUOp = rs1_value - rs2_value
+        
+        if ALUOp == 0:
+            branch_target = imm  # Branch target address is the immediate value
+            alu_zero = 1     # Set zero flag
+        else:
+            branch_target = 0  # For other instructions, branch target address remains 0
+    
+    if alu_zero == 1:
+        # Branch to target address
+        pc = (pc - 4) + branch_target
+
     total_clock_cycles += 1
 
 def Mem():
@@ -94,11 +182,13 @@ def Mem():
     # Perform memory read/write based on control signals in ex_mem
     # Buffer results in mem_wb
     mem_wb.read_data = d_mem[ex_mem.ALU_result]
+    
     total_clock_cycles += 1
 
 def Writeback():
     global mem_wb, total_clock_cycles
     # Write back result to register file based on control signals in mem_wb
+    
     total_clock_cycles += 1
 
 def ControlUnit():
@@ -190,8 +280,8 @@ def main():
 
             # Check if the first instruction has finished execution
             if pc >= 4 * len(lines):
-                # Print output when the first instruction finishes execution
-                print(f"Instruction finished at cycle {total_clock_cycles}")
+                print("\nprogram terminated:")
+                print(f"total execution time is {total_clock_cycles} cycles")
                 break
 
     print("Program terminated.")

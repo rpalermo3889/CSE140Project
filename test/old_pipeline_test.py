@@ -30,15 +30,27 @@ mem_wb = PipelineRegister()
 # Global variables
 pc = 0
 total_clock_cycles = 0
-rf = [0] * 32
-d_mem = [0] * (0x74 + 1)
 lines = []
 
+# Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
+rf = [0] * 32
+rf[1] = 0x20
+rf[2] = 0x5
+rf[10] = 0x70
+rf[11] = 0x4
+
+# Data memory initialization (0x70 = 0x5, 0x74 = 0x10)
+d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
+d_mem[0x70] = 0x5
+d_mem[0x74] = 0x10
+
 def Fetch():
-    global if_id, pc, lines
+    global if_id, pc, lines, instruction
     next_pc = pc + 4
     pc = next_pc
-    if_id.instruction = lines[int(pc/4) - 1]
+    
+    line_number = int(pc/4) - 1 
+    if_id.instruction = lines[line_number]
 
 def Decode():
     global if_id, id_ex
@@ -70,8 +82,6 @@ def Execute():
         ex_mem.ALU_result = rs1_value - ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value - rs2_value
         ex_mem.branch_target = ex_mem.imm if ex_mem.ALU_result == 0 else 0
         ex_mem.alu_zero = 1 if ex_mem.ALU_result == 0 else 0
-
-
 
 def Mem():
     global ex_mem, mem_wb, d_mem
@@ -164,7 +174,7 @@ def ControlUnit(opcode, funct3, funct7):
     return control_signals
 
 def main():
-    global pc, total_clock_cycles
+    global pc, total_clock_cycles, lines
 
     filename = input("Enter the program file name to run:\n")
 
@@ -176,7 +186,6 @@ def main():
         while pc < len(lines) * 4:
             Fetch()
             Decode()
-            ControlUnit()
             Execute()
             Mem()
             Writeback()
@@ -211,3 +220,33 @@ def main():
 if __name__ == "__main__":
     main()
 
+"""
+Enter the program file name to run:
+sample_part1.txt
+
+total_clock_cycles 1:
+x3 is modified to 0x10
+PC is modified to 0x4
+
+total_clock_cycles 2:
+x5 is modified to 0x1b
+PC is modified to 0x8
+
+total_clock_cycles 3:
+PC is modified to 0xc
+
+total_clock_cycles 4:
+x5 is modified to 0x1b  ->(x5 is modified to 0x2b)
+PC is modified to 0x10
+
+total_clock_cycles 5:
+x5 is modified to 0x1f  ->(x5 is modified to 0x2f)
+PC is modified to 0x14
+
+total_clock_cycles 6:
+Memory 0x70 is modified to 0x10 ->(Memory 0x70 is modified to 0x2f)
+PC is modified to 0x18
+
+Program terminated:
+Total execution time is 6 cycles
+"""
