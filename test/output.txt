@@ -1,0 +1,66 @@
+Enter the program file name to run:
+sample_part1.txt
+
+MemRead                 lw x3, 4(x10)
+total_clock_cycles 5:
+x3 is modified to 0x10
+pc is modified to 0x4
+
+RegWrite                sub x5, x1, x2
+total_clock_cycles 6:
+x5 is modified to 0x1b
+pc is modified to 0x8
+
+Branch                  beq x5, x3, 12
+total_clock_cycles 7:
+pc is modified to 0xc
+
+RegWrite                add x5, x5, x3
+total_clock_cycles 8:
+x5 is modified to 0x1b {27}     # x5 is modified to 0x2b {43}
+pc is modified to 0x10
+
+RegWrite                or x5, x11, x5
+total_clock_cycles 9:
+x5 is modified to 0x1f {31}     # x5 is modified to 0x2f {47}
+pc is modified to 0x14
+
+MemWrite                sw x5, 0(x10)
+total_clock_cycles 10:
+Memory 0x70 is modified to 0x10 {16}     # memory 0x70 is modified to 0x2f {47}
+pc is modified to 0x18
+
+Program terminated:
+Total execution time is 10 cycles
+
+
+#====================== Output =============================
+
+Enter the program file name to run:
+sample_part1.txt
+
+total_clock_cycles 5:
+x3 is modified to 0x10
+pc is modified to 0x4
+
+total_clock_cycles 6:
+x5 is modified to 0x1b
+pc is modified to 0x8
+
+total_clock_cycles 7:
+pc is modified to 0xc
+
+total_clock_cycles 8:
+x5 is modified to 0x1b {27}     # x5 is modified to 0x2b {43}
+pc is modified to 0x10
+
+total_clock_cycles 9:
+x5 is modified to 0x1f {31}     # x5 is modified to 0x2f {47}
+pc is modified to 0x14
+
+total_clock_cycles 10:
+Memory 0x70 is modified to 0x10 {16}     # memory 0x70 is modified to 0x2f {47}
+pc is modified to 0x18
+
+Program terminated:
+Total execution time is 10 cycles
