@@ -136,31 +136,29 @@ def Writeback():
             else:
                 rf[mem_wb.rd] = mem_wb.ALU_result
 
-    print("rf: ", rf)
-    Mem()
-
     # Print results for each cycle
     if mem_wb.control_signals['Branch']:
-        print(f"\ntotal_clock_cycles {total_clock_cycles}:")
+        print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
         print(f"pc is modified to 0x{pc1:x}")
 
     elif mem_wb.control_signals['MemWrite']:
-        print(f"\ntotal_clock_cycles {total_clock_cycles}:")
+        print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
         print(f"Memory 0x{mem_wb.ALU_result:x} is modified to 0x{mem_wb.read_data:x}")
         print(f"pc is modified to 0x{pc1:x}")
 
     elif mem_wb.control_signals['MemRead']:
-        print(f"\ntotal_clock_cycles {total_clock_cycles}:")
+        print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
         print(f"x{mem_wb.rd} is modified to 0x{mem_wb.read_data:x}")
         print(f"pc is modified to 0x{pc1:x}")
 
     elif mem_wb.control_signals['RegWrite'] or mem_wb.control_signals['Jump']:
-        print(f"\ntotal_clock_cycles {total_clock_cycles}:")
+        print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
         print(f"x{mem_wb.rd} is modified to 0x{rf[mem_wb.rd]:x}")
         print(f"pc is modified to 0x{pc1:x}")
 
     else:
-        print(f"\ntotal_clock_cycles {total_clock_cycles}:\nNo memory operation performed.")
+        print(f"\ntotal_clock_cycles {total_clock_cycles+1}:\nNo memory operation performed.")
+    Mem()
     
 def ControlUnit(opcode, funct3, funct7):
     control_signals = {
@@ -231,6 +229,7 @@ def main():
     with open(filename, 'r') as file:
         lines = file.readlines()
 
+        # only runs first instruction to show pipeline working
         Fetch()
         Decode()
         Execute()
