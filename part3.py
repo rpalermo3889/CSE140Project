@@ -11,6 +11,8 @@ class PipelineRegister:
         self.funct3 = 0
         self.funct7 = 0
         self.ALU_result = 0
+        self.mem_address = 0
+        self.write_data = 0
         self.control_signals = {
             'RegWrite': 0,
             'Branch': 0,
@@ -114,7 +116,11 @@ def Mem():
     mem_wb.ALU_result = ex_mem.ALU_result
     mem_wb.control_signals = ex_mem.control_signals
 
+
     mem_wb.pc = ex_mem.pc
+
+    mem_wb.mem_address = mem_wb.ALU_result if mem_wb.control_signals["ALUSrc"] == 1 else mem_wb.rs2
+    mem_wb.write_data = rf[mem_wb.rs2] if mem_wb.rs2 != "NA" else mem_wb.rs2
 
     if mem_wb.control_signals['MemRead']:
         mem_wb.read_data = d_mem[mem_wb.ALU_result]
@@ -143,7 +149,7 @@ def Writeback():
 
     elif mem_wb.control_signals['MemWrite']:
         print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
-        print(f"Memory 0x{mem_wb.ALU_result:x} is modified to 0x{mem_wb.read_data:x}")
+        print(f"Memory 0x{mem_wb.ALU_result:x} is modified to 0x{mem_wb.write_data:x}")
         print(f"pc is modified to 0x{pc1:x}")
 
     elif mem_wb.control_signals['MemRead']:
@@ -236,10 +242,10 @@ def main():
         Mem()
         Writeback()
         # ================== UNCOMMENT BELOW TO RUN WHOLE PROGRAM ===================
-        i=1
-        while i < len(lines):
-            Writeback()
-            i+=1
+        # i=1
+        # while i < len(lines):
+        #     Writeback()
+        #     i+=1
         # ============================================================================
 
     print("\nProgram terminated:")
