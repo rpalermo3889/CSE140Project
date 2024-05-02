@@ -86,60 +86,81 @@ def Execute():
     rs1_value = rf[ex_mem.rs1] if ex_mem.rs1 != "NA" else 0
     rs2_value = rf[ex_mem.rs2] if ex_mem.rs2 != "NA" else 0
 
-    if ex_mem.control_signals['ALUOp'] == 0b0000:  # ALU: AND
-        #ex_mem.ALU_result = rs1_value & ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value & rs2_value
-        
-        print("rs1_value: ", rs1_value)
-        if ex_mem.control_signals['ALUSrc']:
-            ex_mem.ALU_result = rs1_value & ex_mem.imm
-            print("ex_mem.imm", ex_mem.imm)
-        else: 
-            ex_mem.ALU_result = rs1_value & rs2_value
-            print("rs2_value: ", rs2_value)
-
-        print("AND")
-
-    elif ex_mem.control_signals['ALUOp'] == 0b0010:  # ALU: add
+    print("\nrf:", rf)
+    if ex_mem.control_signals['ALUOp'] == 0b0010:  # ALU: add
         #ex_mem.ALU_result = rs1_value + ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value + rs2_value
-
-        print("rs1_value: ", rs1_value)
         if ex_mem.control_signals['ALUSrc']:
             ex_mem.ALU_result = rs1_value + ex_mem.imm
-            print("ex_mem.imm", ex_mem.imm)
-        else:
+            print("rs1_value + imm")
+            print("rs1: ", ex_mem.rs1)
+            print("rs1_value: ", rs1_value)
+            print("imm: ", ex_mem.imm)
+            print("result: ", ex_mem.ALU_result)
+        else: 
             ex_mem.ALU_result = rs1_value + rs2_value
+            print("rs1_value + rs2_value")
+            print("rs1: ", ex_mem.rs1)
+            print("rs2: ", ex_mem.rs2)
+            print("rs1_value: ", rs1_value)
             print("rs2_value: ", rs2_value)
-
-        print("add")
+            print("result: ", ex_mem.ALU_result)
 
     elif ex_mem.control_signals['ALUOp'] == 0b0001:  # ALU: OR
         #ex_mem.ALU_result = rs1_value | ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value | rs2_value
-
-        print("rs1_value: ", rs1_value)
         if ex_mem.control_signals['ALUSrc']:
             ex_mem.ALU_result = rs1_value | ex_mem.imm
-            print("ex_mem.imm", ex_mem.imm)
+            print("rs1_value | imm")
+            print("rs1: ", ex_mem.rs1)
+            print("rs1_value: ", rs1_value)
+            print("imm: ", ex_mem.imm)
+            print("result: ", ex_mem.ALU_result)
         else:
             ex_mem.ALU_result = rs1_value | rs2_value
+            print("rs1_value | rs2_value")
+            print("rs1: ", ex_mem.rs1)
+            print("rs2: ", ex_mem.rs2)
+            print("rs1_value: ", rs1_value)
             print("rs2_value: ", rs2_value)
-        print("OR")
+            print("result: ", ex_mem.ALU_result)
+    
+    elif ex_mem.control_signals['ALUOp'] == 0b0000:  # ALU: AND
+        #ex_mem.ALU_result = rs1_value & ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value & rs2_value
+        if ex_mem.control_signals['ALUSrc']:
+            ex_mem.ALU_result = rs1_value & ex_mem.imm
+            print("rs1_value & imm")
+            print("rs1: ", ex_mem.rs1)
+            print("rs1_value: ", rs1_value)
+            print("imm: ", ex_mem.imm)
+            print("result: ", ex_mem.ALU_result)
+        else:
+            ex_mem.ALU_result = rs1_value & rs2_value
+            print("rs1_value & rs2_value")
+            print("rs1: ", ex_mem.rs1)
+            print("rs2: ", ex_mem.rs2)
+            print("rs1_value: ", rs1_value)
+            print("rs2_value: ", rs2_value)
+            print("result: ", ex_mem.ALU_result)
 
     elif ex_mem.control_signals['ALUOp'] == 0b0110:  # ALU: sub
         #ex_mem.ALU_result = rs1_value - ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value - rs2_value
-
-        print("rs1_value: ", rs1_value)
         if ex_mem.control_signals['ALUSrc']:
             ex_mem.ALU_result = rs1_value - ex_mem.imm
-            print("ex_mem.imm", ex_mem.imm)
+            print("rs1_value - imm")
+            print("rs1: ", ex_mem.rs1)
+            print("rs1_value: ", rs1_value)
+            print("imm: ", ex_mem.imm)
+            print("result: ", ex_mem.ALU_result)
         else:
             ex_mem.ALU_result = rs1_value - rs2_value
+            print("rs1_value - rs2_value")
+            print("rs1: ", ex_mem.rs1)
+            print("rs2: ", ex_mem.rs2)
+            print("rs1_value: ", rs1_value)
             print("rs2_value: ", rs2_value)
-        print("sub")
+            print("result: ", ex_mem.ALU_result)
 
         ex_mem.branch_target = ex_mem.imm if ex_mem.ALU_result == 0 else 0
         ex_mem.alu_zero = 1 if ex_mem.ALU_result == 0 else 0
-            
-    print("ex_mem.ALU_result:", ex_mem.ALU_result)
 
     Decode()
 
@@ -171,41 +192,37 @@ def Writeback():
     pc1 = mem_wb.pc
 
     if mem_wb.control_signals['RegWrite']:
-        #if mem_wb.rd != "NA":
-        if mem_wb.control_signals['MemtoReg']:
-            rf[mem_wb.rd] = mem_wb.instruction
-            #print("mem_wb.instruction: ", mem_wb.instruction)
-        else:
-            rf[mem_wb.rd] = mem_wb.ALU_result
-            #print("mem_wb.ALU_result: ", mem_wb.ALU_result)
+        # if mem_wb.rd != "NA":
+        #     if mem_wb.control_signals['MemtoReg']:
+        #         rf[mem_wb.rd] = mem_wb.read_data
+        #     else:
+        #         rf[mem_wb.rd] = mem_wb.ALU_result
+
+        if mem_wb.rd != "NA":
+            rf[mem_wb.rd] = mem_wb.read_data if mem_wb.control_signals['MemRead'] else mem_wb.ALU_result
 
     # Print results for each cycle
     if mem_wb.control_signals['Branch']:
-        #print("\nBranch")
         print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
         print(f"pc is modified to 0x{pc1:x}")
 
     elif mem_wb.control_signals['MemWrite']:
-        #print("\nMemWrite")
         print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
         print(f"Memory 0x{mem_wb.ALU_result:x} is modified to 0x{mem_wb.read_data:x}")
         print(f"pc is modified to 0x{pc1:x}")
 
     elif mem_wb.control_signals['MemRead']:
-        #print("\nMemRead")
         print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
         print(f"x{mem_wb.rd} is modified to 0x{mem_wb.read_data:x}")
         print(f"pc is modified to 0x{pc1:x}")
 
     elif mem_wb.control_signals['RegWrite'] or mem_wb.control_signals['Jump']:
-        #print("\nRegWrite")
         print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
         print(f"x{mem_wb.rd} is modified to 0x{rf[mem_wb.rd]:x}")
         print(f"pc is modified to 0x{pc1:x}")
 
     else:
         print(f"\ntotal_clock_cycles {total_clock_cycles+1}:\nNo memory operation performed.")
-
     Mem()
     
 def ControlUnit(opcode, funct3, funct7):
@@ -216,7 +233,8 @@ def ControlUnit(opcode, funct3, funct7):
         'MemWrite': 0,
         'MemtoReg': 0,
         'MemRead': 0,
-        'Jump': 0
+        'Jump': 0,
+        'ALUOp': 0
     }
     if opcode == 0b0100011:  # sw
         control_signals['MemWrite'] = 1
@@ -283,12 +301,12 @@ def main():
         Execute()
         Mem()
         Writeback()
-        # ================== UNCOMMENT BELOW TO RUN WHOLE PROGRAM ===================
+        # # ================== UNCOMMENT BELOW TO RUN WHOLE PROGRAM ===================
         i=1
         while i < len(lines):
             Writeback()
             i+=1
-        # ============================================================================
+        # # ============================================================================
 
     print("\nProgram terminated:")
     print(f"Total execution time is {total_clock_cycles} cycles")
@@ -321,39 +339,6 @@ lw - yes
 jalr - yes
 addi - yes
 add - no
-
-
-#====================== Correct Output =============================
-
-Enter the program file name to run:
-sample_part1.txt
-
-total_clock_cycles 5:
-x3 is modified to 0x10
-pc is modified to 0x4
-
-total_clock_cycles 6:
-x5 is modified to 0x1b
-pc is modified to 0x8
-
-total_clock_cycles 7:
-pc is modified to 0xc
-
-total_clock_cycles 8:
-x5 is modified to 0x1b {27}     # x5 is modified to 0x2b {43}
-pc is modified to 0x10
-
-total_clock_cycles 9:
-x5 is modified to 0x1f {31}     # x5 is modified to 0x2f {47}
-pc is modified to 0x14
-
-total_clock_cycles 10:
-Memory 0x70 is modified to 0x10 {16}     # memory 0x70 is modified to 0x2f {47}
-pc is modified to 0x18
-
-Program terminated:
-Total execution time is 10 cycles
-
 
 #====================== Correct Output =============================
 Enter the program file name to run:

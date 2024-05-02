@@ -86,16 +86,16 @@ def Execute():
     rs1_value = rf[ex_mem.rs1] if ex_mem.rs1 != "NA" else 0
     rs2_value = rf[ex_mem.rs2] if ex_mem.rs2 != "NA" else 0
 
-    if ex_mem.control_signals['ALUOp'] == 0b0010:  # ALU: add
+    if ex_mem.control_signals['alu_ctrl'] == 0b0010:  # ALU: add
         ex_mem.ALU_result = rs1_value + ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value + rs2_value
     
-    elif ex_mem.control_signals['ALUOp'] == 0b0001:  # ALU: OR
+    elif ex_mem.control_signals['alu_ctrl'] == 0b0001:  # ALU: OR
         ex_mem.ALU_result = rs1_value | ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value | rs2_value
     
-    elif ex_mem.control_signals['ALUOp'] == 0b0000:  # ALU: AND
+    elif ex_mem.control_signals['alu_ctrl'] == 0b0000:  # ALU: AND
         ex_mem.ALU_result = rs1_value & ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value & rs2_value
 
-    elif ex_mem.control_signals['ALUOp'] == 0b0110:  # ALU: sub
+    elif ex_mem.control_signals['alu_ctrl'] == 0b0110:  # ALU: sub
         ex_mem.ALU_result = rs1_value - ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value - rs2_value
         ex_mem.branch_target = ex_mem.imm if ex_mem.ALU_result == 0 else 0
         ex_mem.alu_zero = 1 if ex_mem.ALU_result == 0 else 0
@@ -131,8 +131,8 @@ def Writeback():
 
     if mem_wb.control_signals['RegWrite']:
         if mem_wb.rd != "NA":
-            if mem_wb.control_signals['MemtoReg']:
-                rf[mem_wb.rd] = mem_wb.instruction
+            if mem_wb.control_signals['MemRead']:
+                rf[mem_wb.rd] = mem_wb.read_data
             else:
                 rf[mem_wb.rd] = mem_wb.ALU_result
 
@@ -174,49 +174,49 @@ def ControlUnit(opcode, funct3, funct7):
         control_signals['MemWrite'] = 1
         control_signals['ALUSrc'] = 1
         control_signals['MemtoReg'] = 1
-        control_signals['ALUOp'] = 0b0010  # add
+        control_signals['alu_ctrl'] = 0b0010  # add
 
     elif opcode == 0b1100011:  # beq
         control_signals['Branch'] = 1
-        control_signals['ALUOp'] = 0b0110  # ALU: sub
+        control_signals['alu_ctrl'] = 0b0110  # ALU: sub
 
     elif opcode == 0b0000011:  # lw
         control_signals['MemRead'] = 1
         control_signals['ALUSrc'] = 1
         control_signals['RegWrite'] = 1
         control_signals['MemtoReg'] = 1
-        control_signals['ALUOp'] = 0b0010  # ALU: add
+        control_signals['alu_ctrl'] = 0b0010  # ALU: add
 
     elif opcode == 0b0010011: # I-type
         control_signals['RegWrite'] = 1
         control_signals['ALUSrc'] = 1
         control_signals['MemtoReg'] = 1
         if funct3 == 0b000: # addi
-            control_signals['ALUOp'] = 0b0010  # ALU: add
+            control_signals['alu_ctrl'] = 0b0010  # ALU: add
         elif funct3 == 0b110: # ori
-            control_signals['ALUOp'] = 0b0001  # ALU: OR
+            control_signals['alu_ctrl'] = 0b0001  # ALU: OR
         elif funct3 == 0b111: # andi
-            control_signals['ALUOp'] = 0b0000  # ALU: AND
+            control_signals['alu_ctrl'] = 0b0000  # ALU: AND
 
     elif opcode == 0b1100111: # jalr
         control_signals['RegWrite'] = 1
         control_signals['ALUSrc'] = 1
         control_signals['Jump'] = 1
         control_signals['MemtoReg'] = 1
-        control_signals['ALUOp'] = 0b0010  # ALU: add
+        control_signals['alu_ctrl'] = 0b0010  # ALU: add
 
     elif opcode == 0b0110011:  # R-type
         control_signals['RegWrite'] = 1
         if funct7 == 0b0000000:
             if funct3 == 0b000:  # add
-                control_signals['ALUOp'] = 0b0010  # ALU: add
+                control_signals['alu_ctrl'] = 0b0010  # ALU: add
             elif funct3 == 0b110:  # or
-                control_signals['ALUOp'] = 0b0001  # ALU: OR
+                control_signals['alu_ctrl'] = 0b0001  # ALU: OR
             elif funct3 == 0b111:  # and
-                control_signals['ALUOp'] = 0b0000  # ALU: AND
+                control_signals['alu_ctrl'] = 0b0000  # ALU: AND
         elif funct7 == 0b0100000:
             if funct3 == 0b000:  # sub
-                control_signals['ALUOp'] = 0b0110  # ALU: sub
+                control_signals['alu_ctrl'] = 0b0110  # ALU: sub
 
     return control_signals
 
@@ -235,12 +235,12 @@ def main():
         Execute()
         Mem()
         Writeback()
-        # # ================== UNCOMMENT BELOW TO RUN WHOLE PROGRAM ===================
-        # i=1
-        # while i < len(lines):
-        #     Writeback()
-        #     i+=1
-        # # ============================================================================
+        # ================== UNCOMMENT BELOW TO RUN WHOLE PROGRAM ===================
+        i=1
+        while i < len(lines):
+            Writeback()
+            i+=1
+        # ============================================================================
 
     print("\nProgram terminated:")
     print(f"Total execution time is {total_clock_cycles} cycles")
