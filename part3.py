@@ -221,7 +221,7 @@ def ControlUnit(opcode, funct3, funct7):
     return control_signals
 
 def main():
-    global pc, total_clock_cycles, lines
+    global total_clock_cycles, lines
 
     filename = input("Enter the program file name to run:\n")
 
@@ -268,40 +268,35 @@ or x5, x11, x5      {rd: x5, rs1: 11, rs2: x5}  (output: x5 is modified to 0x2f 
 
 sw x5, 0(x10)       {rs1: x10, rs2: x5}         (output: memory 0x70 is modified to 0x2f {memory 112 is modified to 47})
 
-sw - yes
-lw - yes
-jalr - yes
-addi - yes
-add - no
-
 #====================== Correct Output =============================
 Enter the program file name to run:
 sample_part1.txt
 
-total_clock_cycles 1 :
+total_clock_cycles 5: 
 x3 is modified to 0x10
 pc is modified to 0x4 
 
-total_clock_cycles 2 :
+total_clock_cycles 6: 
 x5 is modified to 0x1b
-pc is modified to 0x8 
+pc is modified to 0x8
 
-total_clock_cycles 3 :
-pc is modified to 0xc 
+total_clock_cycles 7:
+pc is modified to 0xc
 
-total_clock_cycles 4 :
+total_clock_cycles 8:
 x5 is modified to 0x2b
 pc is modified to 0x10
 
-total_clock_cycles 5 :
+total_clock_cycles 9:
 x5 is modified to 0x2f
 pc is modified to 0x14
 
-total_clock_cycles 6 :
-memory 0x70 is modified to 0x2f
+total_clock_cycles 10:
+Memory 0x70 is modified to 0x2f
 pc is modified to 0x18
 
-program terminated:
-total execution time is 6 cycles
+Program terminated:
+Total execution time is 10 cycles
+
 #==============================================================
 """

@@ -319,22 +319,22 @@ Enter the program file name to run:
 sample_part1.txt
 
 total_clock_cycles 1 :
-x3 is modified to 0x10
+x3 is modified to 0x10 {16}
 pc is modified to 0x4 
 
 total_clock_cycles 2 :
-x5 is modified to 0x1b
+x5 is modified to 0x1b {27}
 pc is modified to 0x8 
 
 total_clock_cycles 3 :
-pc is modified to 0xc 
+pc is modified to 0xc {12}
 
 total_clock_cycles 4 :
-x5 is modified to 0x2b
+x5 is modified to 0x2b {43}
 pc is modified to 0x10
 
 total_clock_cycles 5 :
-x5 is modified to 0x2f
+x5 is modified to 0x2f {47}
 pc is modified to 0x14
 
 total_clock_cycles 6 :

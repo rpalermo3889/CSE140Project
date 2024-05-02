@@ -328,7 +328,7 @@ if __name__ == "__main__":
 
 # test_case.txt
 """
-Test: addi, andi, ori, and, beq
+Tests for: addi, andi, ori, and, beq
 
 # Register file initialization (x1 = 0x20, x2 = 0x5, x10 = 0x70, x11 = 0x4)
 rf = [0] * 32
@@ -337,18 +337,18 @@ rf[3] = 0x8
 # Data memory initialization (0x70 = 0x5, 0x74 = 0x10)
 d_mem = [0] * (0x74 + 1)  # Increase size of the data memory to 64 entries
 
-
-addi x2, x3, 4      # x2 = 12
-beq x2, x2, 12       # pc = 16
--andi x4, x3, 8      # x4 = 8
--ori x5, x1, 4       # x5 = 4
-and x6, x2, x4      # x6 = 8
-
 00000000010000011000000100010011
 00000000001000010000011001100011
 00000000100000011111001000010011
 00000000010000001110001010010011
 00000000010000010111001100110011
+
+Translations:
+addi x2, x3, 4      # x2 = 12
+beq x2, x2, 12       # pc = 16
+-andi x4, x3, 8      # x4 = 8   skips
+-ori x5, x1, 4       # x5 = 4   skips
+and x6, x2, x4      # x6 = 8
 
 """
 
@@ -373,36 +373,83 @@ Translations:
 6.) sw x30, 0(x8)       {rs1: x8, rs2: x30}             (output: memory 0x20 {32} is modified to 0x3)
 
 #====================== Correct Output =============================
-
- Operation: jal (jumps to add, 3rd instruction)
+Enter the program file name to run:
+sample_part1.txt
 total_clock_cycles 1 :
 ra is modified to 0x4   {4}
 pc is modified to 0x8   {8}
 
- Operation: add
 total_clock_cycles 2 :
 a0 is modified to 0xc   {12}
 pc is modified to 0xc   {12}
 
- Operation: sub
 total_clock_cycles 3 :
 t5 is modified to 0x3   {3}
 pc is modified to 0x10  {16}
 
- Operation: jalr
 total_clock_cycles 4 :
 ra is modified to 0x14  {20}
 pc is modified to 0x4   {4}
 
- Operation: jal
 total_clock_cycles 5 :
 ra is modified to 0x8   {8}
 pc is modified to 0x14  {20}
 
- Operation: sw
 total_clock_cycles 6 :
 memory 0x20 is modified to 0x3
 pc is modified to 0x18  {24}
+
+program terminated:
+total execution time is 6 cycles
+#==============================================================
+"""
+
+# sample_part1.txt
+"""
+00000000010001010010000110000011
+01000000001000001000001010110011
+00000000001100101000011001100011
+00000000001100101000001010110011
+00000000010101011110001010110011
+00000000010101010010000000100011
+
+Translations:
+lw x3, 4(x10)       {rd: x3, rs1: x10}          (output: x3 is modified to 0x10 {16})
+sub x5, x1, x2      {rd: x5, rs1: 1, rs2: 2}    (output: x5 is modified to 0x1b {27})
+beq x5, x3, 12      {rs1: x5, rs2: 3}
+
+add x5, x5, x3      {rd: x5, rs1: 5, rs2: 3}    (output: x5 is modified to 0x2b {43})
+
+or x5, x11, x5      {rd: x5, rs1: 11, rs2: x5}  (output: x5 is modified to 0x2f {47})
+
+sw x5, 0(x10)       {rs1: x10, rs2: x5}         (output: memory 0x70 is modified to 0x2f {memory 112 is modified to 47})
+
+#====================== Correct Output =============================
+Enter the program file name to run:
+sample_part1.txt
+
+total_clock_cycles 1 :
+x3 is modified to 0x10
+pc is modified to 0x4 
+
+total_clock_cycles 2 :
+x5 is modified to 0x1b
+pc is modified to 0x8 
+
+total_clock_cycles 3 :
+pc is modified to 0xc 
+
+total_clock_cycles 4 :
+x5 is modified to 0x2b
+pc is modified to 0x10
+
+total_clock_cycles 5 :
+x5 is modified to 0x2f
+pc is modified to 0x14
+
+total_clock_cycles 6 :
+memory 0x70 is modified to 0x2f
+pc is modified to 0x18
 
 program terminated:
 total execution time is 6 cycles
