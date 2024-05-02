@@ -86,19 +86,60 @@ def Execute():
     rs1_value = rf[ex_mem.rs1] if ex_mem.rs1 != "NA" else 0
     rs2_value = rf[ex_mem.rs2] if ex_mem.rs2 != "NA" else 0
 
-    if ex_mem.control_signals['ALUOp'] == 0b0010:  # ALU: add
-        ex_mem.ALU_result = rs1_value + ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value + rs2_value
-    
+    if ex_mem.control_signals['ALUOp'] == 0b0000:  # ALU: AND
+        #ex_mem.ALU_result = rs1_value & ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value & rs2_value
+        
+        print("rs1_value: ", rs1_value)
+        if ex_mem.control_signals['ALUSrc']:
+            ex_mem.ALU_result = rs1_value & ex_mem.imm
+            print("ex_mem.imm", ex_mem.imm)
+        else: 
+            ex_mem.ALU_result = rs1_value & rs2_value
+            print("rs2_value: ", rs2_value)
+
+        print("AND")
+
+    elif ex_mem.control_signals['ALUOp'] == 0b0010:  # ALU: add
+        #ex_mem.ALU_result = rs1_value + ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value + rs2_value
+
+        print("rs1_value: ", rs1_value)
+        if ex_mem.control_signals['ALUSrc']:
+            ex_mem.ALU_result = rs1_value + ex_mem.imm
+            print("ex_mem.imm", ex_mem.imm)
+        else:
+            ex_mem.ALU_result = rs1_value + rs2_value
+            print("rs2_value: ", rs2_value)
+
+        print("add")
+
     elif ex_mem.control_signals['ALUOp'] == 0b0001:  # ALU: OR
-        ex_mem.ALU_result = rs1_value | ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value | rs2_value
-    
-    elif ex_mem.control_signals['ALUOp'] == 0b0000:  # ALU: AND
-        ex_mem.ALU_result = rs1_value & ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value & rs2_value
+        #ex_mem.ALU_result = rs1_value | ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value | rs2_value
+
+        print("rs1_value: ", rs1_value)
+        if ex_mem.control_signals['ALUSrc']:
+            ex_mem.ALU_result = rs1_value | ex_mem.imm
+            print("ex_mem.imm", ex_mem.imm)
+        else:
+            ex_mem.ALU_result = rs1_value | rs2_value
+            print("rs2_value: ", rs2_value)
+        print("OR")
 
     elif ex_mem.control_signals['ALUOp'] == 0b0110:  # ALU: sub
-        ex_mem.ALU_result = rs1_value - ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value - rs2_value
+        #ex_mem.ALU_result = rs1_value - ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value - rs2_value
+
+        print("rs1_value: ", rs1_value)
+        if ex_mem.control_signals['ALUSrc']:
+            ex_mem.ALU_result = rs1_value - ex_mem.imm
+            print("ex_mem.imm", ex_mem.imm)
+        else:
+            ex_mem.ALU_result = rs1_value - rs2_value
+            print("rs2_value: ", rs2_value)
+        print("sub")
+
         ex_mem.branch_target = ex_mem.imm if ex_mem.ALU_result == 0 else 0
         ex_mem.alu_zero = 1 if ex_mem.ALU_result == 0 else 0
+            
+    print("ex_mem.ALU_result:", ex_mem.ALU_result)
 
     Decode()
 
@@ -133,37 +174,38 @@ def Writeback():
         #if mem_wb.rd != "NA":
         if mem_wb.control_signals['MemtoReg']:
             rf[mem_wb.rd] = mem_wb.instruction
-            print("mem_wb.instruction: ", mem_wb.instruction)
+            #print("mem_wb.instruction: ", mem_wb.instruction)
         else:
             rf[mem_wb.rd] = mem_wb.ALU_result
-            print("mem_wb.ALU_result: ", mem_wb.ALU_result)
+            #print("mem_wb.ALU_result: ", mem_wb.ALU_result)
 
     # Print results for each cycle
     if mem_wb.control_signals['Branch']:
-        print("\nBranch")
+        #print("\nBranch")
         print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
         print(f"pc is modified to 0x{pc1:x}")
 
     elif mem_wb.control_signals['MemWrite']:
-        print("\nMemWrite")
+        #print("\nMemWrite")
         print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
         print(f"Memory 0x{mem_wb.ALU_result:x} is modified to 0x{mem_wb.read_data:x}")
         print(f"pc is modified to 0x{pc1:x}")
 
     elif mem_wb.control_signals['MemRead']:
-        print("\nMemRead")
+        #print("\nMemRead")
         print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
         print(f"x{mem_wb.rd} is modified to 0x{mem_wb.read_data:x}")
         print(f"pc is modified to 0x{pc1:x}")
 
     elif mem_wb.control_signals['RegWrite'] or mem_wb.control_signals['Jump']:
-        print("\nRegWrite")
+        #print("\nRegWrite")
         print(f"\ntotal_clock_cycles {total_clock_cycles+1}:")
         print(f"x{mem_wb.rd} is modified to 0x{rf[mem_wb.rd]:x}")
         print(f"pc is modified to 0x{pc1:x}")
 
     else:
         print(f"\ntotal_clock_cycles {total_clock_cycles+1}:\nNo memory operation performed.")
+
     Mem()
     
 def ControlUnit(opcode, funct3, funct7):

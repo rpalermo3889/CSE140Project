@@ -33,34 +33,101 @@ pc is modified to 0x18
 Program terminated:
 Total execution time is 10 cycles
 
+#====================== Correct Output =============================
+
+
+Enter the program file name to run:
+sample_part1.txt
+
+Other
+MemRead
+total_clock_cycles 1 :
+x3 is modified to 0x10
+pc is modified to 0x4
+
+Other
+RegWrite
+total_clock_cycles 2 :
+x5 is modified to 0x1b
+pc is modified to 0x8
+
+Branch
+total_clock_cycles 3 :
+pc is modified to 0xc
+
+Other
+RegWrite
+total_clock_cycles 4 :
+x5 is modified to 0x2b
+pc is modified to 0x10
+
+Other
+RegWrite
+total_clock_cycles 5 :
+x5 is modified to 0x2f
+pc is modified to 0x14
+
+MemWrite
+total_clock_cycles 6 :
+memory 0x70 is modified to 0x2f
+pc is modified to 0x18
+
+program terminated:
+total execution time is 6 cycles
+
+
 
 #====================== Output =============================
 
 Enter the program file name to run:
 sample_part1.txt
 
-total_clock_cycles 5:
+add (operation: lw)
+ex_mem.ALU_result: 116
+
+sub (operation: sub)
+ex_mem.ALU_result: 27
+
+total_clock_cycles 5:       lw
 x3 is modified to 0x10
 pc is modified to 0x4
 
-total_clock_cycles 6:
+sub (operation: beq)
+ex_mem.ALU_result: 0
+
+total_clock_cycles 6:       sub
 x5 is modified to 0x1b
 pc is modified to 0x8
 
-total_clock_cycles 7:
+add (operation: add)
+ex_mem.ALU_result: 27
+
+total_clock_cycles 7:       beq
 pc is modified to 0xc
 
-total_clock_cycles 8:
+OR (operation: or)
+ex_mem.ALU_result: 31
+
+total_clock_cycles 8:       add
 x5 is modified to 0x1b {27}     # x5 is modified to 0x2b {43}
 pc is modified to 0x10
 
-total_clock_cycles 9:
+add (operation: add)
+ex_mem.ALU_result: 112
+
+total_clock_cycles 9:       or
 x5 is modified to 0x1f {31}     # x5 is modified to 0x2f {47}
 pc is modified to 0x14
 
-total_clock_cycles 10:
+add (operation: sw)
+ex_mem.ALU_result: 112
+
+total_clock_cycles 10:      sw
 Memory 0x70 is modified to 0x10 {16}     # memory 0x70 is modified to 0x2f {47}
 pc is modified to 0x18
+
+add
+ex_mem.ALU_result: 112
 
 Program terminated:
 Total execution time is 10 cycles
