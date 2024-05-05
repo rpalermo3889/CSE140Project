@@ -72,10 +72,10 @@ def Execute():
     global ALUOp, MemtoReg
     global rs1, rs2, imm
 
-    # Perform ALU operation
     ALUOp = 0
     alu_zero = 0
 
+    # Pass the values of rs1 and rs2 to be used for ALU operations
     if rs1 != "NA":
         rs1_value = rf[rs1]
     if rs2 != "NA":

@@ -1,7 +1,6 @@
 import math
 
 # Function to sign-extend a 12-bit immediate value
-# Ronald Chen
 def sign_extend_12(value):
     # Check if the sign bit is set
     if value & (1 << 11):
@@ -32,20 +31,18 @@ def decode_R(instr, opcode):
     return opcode, rd, rs1, rs2, "NA", funct3, funct7
 
 # Function to decode I-type instruction
-def decode_I(instr):
+def decode_I(instr, opcode):
     rd = (instr >> 7) & 0x1F
     rs1 = (instr >> 15) & 0x1F
-    opcode = instr & 0x7F
     imm = sign_extend_12((instr >> 20) & 0x5F) # Sign extend immediate
     funct3 = (instr >> 12) & 0b111
          # opcode, rd, rs1, rs2, imm, funct3, funct7
     return opcode, rd, rs1, "NA", imm, funct3, "NA"
 
 # Function to decode S-type instruction
-def decode_S(instr):
+def decode_S(instr, opcode):
     rs2 = (instr >> 20) & 0x1F
     rs1 = (instr >> 15) & 0x1F
-    opcode = instr & 0x7F
     imm = sign_extend_12(((instr >> 25) << 5) | ((instr >> 7) & 0x1F)) # Sign extend immediate
     funct3 = (instr >> 12) & 0b111
          # opcode, rd, rs1, rs2, imm, funct3, funct7
@@ -62,9 +59,8 @@ def decode_SB(instr, opcode):
     return opcode, "NA", rs1, rs2, imm, funct3, "NA"
 
 # Function to decode UJ-type instruction
-def decode_UJ(instr):
+def decode_UJ(instr, opcode):
     rd = (instr >> 7) & 0x1F
-    opcode = instr & 0x7F
     imm = ((instr >> 31) << 20) | (((instr >> 12) & 0xFF) << 12) | \
           (((instr >> 20) & 0x1) << 11) | (((instr >> 21) & 0x3FF) << 1)
          # opcode, rd, rs1, rs2, imm, funct3, funct7
@@ -74,7 +70,7 @@ def decode_UJ(instr):
 def decoder(binary):
     instr = 0
     binary = str(binary)
-    # print(binary)
+
     for i, bit in enumerate(binary):
         if bit == '1':
             instr |= (1 << (31 - i))
@@ -83,10 +79,10 @@ def decoder(binary):
     if opcode == 0b0110011: # R-type
         return decode_R(instr, opcode)
     elif opcode == 0b0000011 or opcode == 0b0010011 or opcode == 0b1100111: # I-type
-        return decode_I(instr)
+        return decode_I(instr, opcode)
     elif opcode == 0b0100011: # S-type
-        return decode_S(instr)
+        return decode_S(instr, opcode)
     elif opcode == 0b1100011: # SB-type
         return decode_SB(instr, opcode)
     elif opcode == 0b1101111: # UJ-type
-        return decode_UJ(instr)
+        return decode_UJ(instr, opcode)

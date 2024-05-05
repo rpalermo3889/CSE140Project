@@ -2,6 +2,7 @@ import decoder
 
 class PipelineRegister:
     def __init__(self):
+        self.pc = 0
         self.instruction = 0
         self.opcode = 0
         self.rd = 0
@@ -13,6 +14,7 @@ class PipelineRegister:
         self.ALU_result = 0
         self.mem_address = 0
         self.write_data = 0
+        self.read_data = 0
         self.control_signals = {
             'RegWrite': 0,
             'Branch': 0,
@@ -22,8 +24,6 @@ class PipelineRegister:
             'MemRead': 0,
             'Jump': 0
         }
-        self.pc = 0
-        self.read_data = 0  # New field to hold data read from memory
 
 if_id = PipelineRegister()
 id_ex = PipelineRegister()
@@ -31,7 +31,6 @@ ex_mem = PipelineRegister()
 mem_wb = PipelineRegister()
 
 # Global variables
-#pc = 0
 total_clock_cycles = 0
 lines = []
 
@@ -52,22 +51,30 @@ def Fetch():
     pc = if_id.pc
 
     total_clock_cycles += 1
+    # Read instruction from program text file based on pc value
     next_pc = pc + 4
     pc = next_pc
     
+    # Stops fetching once pc reaches the maximum pc value
     if pc > len(lines) * 4:
         return
 
     if_id.pc = pc
+
+    # Calculate which instruction line
     line_number = int(pc/4) - 1 
     if_id.instruction = lines[line_number]
 
 def Decode():
     global if_id, id_ex
     instruction = if_id.instruction
+        
+    # Extract opcode and operands from instruction
     id_ex.opcode, id_ex.rd, id_ex.rs1, id_ex.rs2, id_ex.imm, id_ex.funct3, id_ex.funct7 = decoder.decoder(instruction)
-    id_ex.control_signals = ControlUnit(id_ex.opcode, id_ex.funct3, id_ex.funct7)
 
+    # Receive the control signals designated by ControlUnit
+    id_ex.control_signals = ControlUnit(id_ex.opcode, id_ex.funct3, id_ex.funct7)
+    
     id_ex.pc = if_id.pc
 
     Fetch()
@@ -82,12 +89,13 @@ def Execute():
     ex_mem.funct3 = id_ex.funct3
     ex_mem.funct7 = id_ex.funct7
     ex_mem.control_signals = id_ex.control_signals
-
     ex_mem.pc = id_ex.pc
 
+    # Pass the values of rs1 and rs2 to be used for ALU operations
     rs1_value = rf[ex_mem.rs1] if ex_mem.rs1 != "NA" else 0
     rs2_value = rf[ex_mem.rs2] if ex_mem.rs2 != "NA" else 0
-
+    
+    # ALU operations
     if ex_mem.control_signals['alu_ctrl'] == 0b0010:  # ALU: add
         ex_mem.ALU_result = rs1_value + ex_mem.imm if ex_mem.control_signals['ALUSrc'] else rs1_value + rs2_value
     
@@ -115,12 +123,10 @@ def Mem():
     mem_wb.funct7 = ex_mem.funct7
     mem_wb.ALU_result = ex_mem.ALU_result
     mem_wb.control_signals = ex_mem.control_signals
-
-
     mem_wb.pc = ex_mem.pc
 
-    mem_wb.mem_address = mem_wb.ALU_result if mem_wb.control_signals["ALUSrc"] == 1 else mem_wb.rs2
-    mem_wb.write_data = rf[mem_wb.rs2] if mem_wb.rs2 != "NA" else mem_wb.rs2
+    mem_wb.mem_address = mem_wb.ALU_result if mem_wb.control_signals["ALUSrc"] == 1 else mem_wb.rs2  # Memory address for lw/sw
+    mem_wb.write_data = rf[mem_wb.rs2] if mem_wb.rs2 != "NA" else mem_wb.rs2  # Data to write to memory for sw
 
     if mem_wb.control_signals['MemRead']:
         mem_wb.read_data = d_mem[mem_wb.ALU_result]
@@ -235,7 +241,7 @@ def main():
     with open(filename, 'r') as file:
         lines = file.readlines()
 
-        # only runs first instruction to show pipeline working
+        # Only runs the first instruction to show pipeline working
         Fetch()
         Decode()
         Execute()
